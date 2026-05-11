@@ -1,0 +1,21 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "TEAMID.com.acme.myapp",
+          "TEAMID.com.acme.myapp.dev",
+          "TEAMID.com.acme.myapp.stg"
+        ],
+        "components": [
+          { "/": "/promo/*", "comment": "promo + referral codes" },
+          { "/": "/share/*", "comment": "shareable content" },
+          { "/": "/post/*",  "comment": "post permalinks" },
+          { "/": "/user/*",  "comment": "user profiles" },
+          { "/": "/r/*",     "comment": "referral landing" }
+        ]
+      }
+    ]
+  }
+}

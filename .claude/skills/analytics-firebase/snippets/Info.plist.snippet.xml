@@ -1,0 +1,21 @@
+<!--
+  Add to ios/Runner/Info.plist before the closing </dict>.
+  Default-DENIES all 4 Consent Mode v2 flags. ConsentService.apply() flips
+  them after explicit user acceptance.
+-->
+
+<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE</key>
+<false/>
+<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE</key>
+<false/>
+<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA</key>
+<false/>
+<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS</key>
+<false/>
+
+<!--
+  ATT prompt text — only required if you also use IDFA (Google Ads SDK,
+  Adjust, AppsFlyer). Firebase Analytics alone uses IDFV (no ATT needed).
+-->
+<key>NSUserTrackingUsageDescription</key>
+<string>Bu izin, kişiselleştirilmiş öneriler ve performans ölçümü için kullanılır.</string>

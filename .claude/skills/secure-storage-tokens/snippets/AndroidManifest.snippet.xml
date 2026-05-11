@@ -1,0 +1,29 @@
+<!--
+  Add to android/app/src/main/AndroidManifest.xml.
+-->
+
+<!-- Inside <manifest>: biometric permissions -->
+<uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+<uses-permission android:name="android.permission.USE_FINGERPRINT"/>  <!-- legacy, harmless -->
+
+<!--
+  Inside <application ...>: disable Android auto-backup so secure-storage
+  ciphertext doesn't restore to a different device (would be unreadable
+  AND a data residency concern).
+-->
+<application
+    android:allowBackup="false"
+    android:fullBackupContent="false"
+    ... >
+</application>
+
+
+<!--
+  ─── ios/Runner/Info.plist ─────────────────────────────────────────────
+  Required for biometric prompts on iOS.
+-->
+
+<!--
+<key>NSFaceIDUsageDescription</key>
+<string>Hesap güvenliğinizi korumak için Face ID kullanılır.</string>
+-->

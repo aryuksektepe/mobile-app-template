@@ -1,0 +1,35 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.acme.myapp",
+      "sha256_cert_fingerprints": [
+        "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99",
+        "FROM:PLAY:CONSOLE:APP:SIGNING:CERTIFICATE:SHA256:HERE",
+        "DEBUG:KEYSTORE:SHA256:OPTIONAL:FOR:DEV:TESTING:HERE"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.acme.myapp.dev",
+      "sha256_cert_fingerprints": [
+        "DEV:FLAVOR:UPLOAD:KEY:SHA256:HERE",
+        "DEV:FLAVOR:DEBUG:KEY:SHA256:HERE"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.acme.myapp.stg",
+      "sha256_cert_fingerprints": [
+        "STG:FLAVOR:UPLOAD:KEY:SHA256:HERE"
+      ]
+    }
+  }
+]

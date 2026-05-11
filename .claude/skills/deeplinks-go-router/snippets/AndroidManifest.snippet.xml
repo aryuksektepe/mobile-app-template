@@ -1,0 +1,34 @@
+<!--
+  Add inside <activity android:name=".MainActivity" ...> in
+  android/app/src/main/AndroidManifest.xml. Add ONE intent-filter
+  per host you support.
+-->
+
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW"/>
+    <category android:name="android.intent.category.DEFAULT"/>
+    <category android:name="android.intent.category.BROWSABLE"/>
+    <data
+        android:scheme="https"
+        android:host="yourdomain.com"/>
+</intent-filter>
+
+<!-- Optional: subdomain -->
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW"/>
+    <category android:name="android.intent.category.DEFAULT"/>
+    <category android:name="android.intent.category.BROWSABLE"/>
+    <data
+        android:scheme="https"
+        android:host="app.yourdomain.com"/>
+</intent-filter>
+
+<!--
+  For Flutter <3.27 ONLY: enable Flutter's deep link handling.
+  Newer Flutter has this on by default.
+-->
+<!--
+<meta-data
+    android:name="flutter_deeplinking_enabled"
+    android:value="true"/>
+-->

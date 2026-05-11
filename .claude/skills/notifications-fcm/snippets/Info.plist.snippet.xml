@@ -1,0 +1,23 @@
+<!--
+  Add to ios/Runner/Info.plist before the closing </dict>.
+-->
+
+<!--
+  Background Modes — Push Notifications + Background Fetch.
+  Already added if you ticked "Background Modes" + "Remote notifications"
+  in Xcode → Signing & Capabilities. Verify the keys are here:
+-->
+<key>UIBackgroundModes</key>
+<array>
+    <string>fetch</string>
+    <string>remote-notification</string>
+</array>
+
+<!--
+  Optional: prevent FCM from automatically swizzling the AppDelegate
+  (only set this if you've migrated to Scene-based lifecycle).
+-->
+<!--
+<key>FirebaseAppDelegateProxyEnabled</key>
+<false/>
+-->

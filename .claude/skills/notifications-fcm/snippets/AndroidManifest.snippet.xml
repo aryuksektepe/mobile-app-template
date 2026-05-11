@@ -1,0 +1,37 @@
+<!--
+  Add to android/app/src/main/AndroidManifest.xml.
+  Inside <manifest> (top-level):
+-->
+
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.VIBRATE"/>
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+<!--
+  Inside <application>:
+-->
+
+<meta-data
+    android:name="com.google.firebase.messaging.default_notification_icon"
+    android:resource="@drawable/ic_notification"/>
+
+<meta-data
+    android:name="com.google.firebase.messaging.default_notification_channel_id"
+    android:value="default_channel"/>
+
+<!--
+  Optional: brand color for the notification accent bar.
+  Define in res/values/colors.xml: <color name="notification_color">#FF5722</color>
+-->
+<meta-data
+    android:name="com.google.firebase.messaging.default_notification_color"
+    android:resource="@color/notification_color"
+    tools:replace="android:resource"/>
+
+<!--
+  IMPORTANT: ic_notification.png MUST be a TRANSPARENT MONOCHROME icon.
+  Generate via Android Studio:
+    File → New → Image Asset → Notification Icons → upload your logo.
+  This generates ic_notification at multiple drawable-* densities.
+  Without transparency, Android renders a white square (pitfall #4).
+-->

@@ -1,0 +1,21 @@
+<!--
+  Add to ios/Runner/Info.plist before closing </dict>.
+
+  Required: REVERSED_CLIENT_ID URL scheme so Google Sign In can call back
+  to your app. Find REVERSED_CLIENT_ID in GoogleService-Info.plist.
+
+  Format: com.googleusercontent.apps.<GOOGLE_PROJECT_ID>-<RANDOM_HASH>
+
+  flutterfire_cli usually patches this for you. If sign-in opens Safari
+  but doesn't return to app, this entry is missing or wrong.
+-->
+
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>com.googleusercontent.apps.YOUR-REVERSED-CLIENT-ID-HERE</string>
+        </array>
+    </dict>
+</array>

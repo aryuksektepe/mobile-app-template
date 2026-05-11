@@ -1,0 +1,20 @@
+# Add to your pubspec.yaml. The sentry_dart_plugin reads this section
+# during build to upload obfuscation maps + dSYMs to Sentry automatically.
+#
+# Build with:
+#   flutter build apk --release --obfuscate --split-debug-info=build/symbols
+#   flutter build ios --release --obfuscate --split-debug-info=build/symbols
+#   dart run sentry_dart_plugin
+#
+# CI: store SENTRY_AUTH_TOKEN as a secret. NEVER commit auth_token here.
+
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: true
+  upload_sources: false
+  project: my-project          # your Sentry project slug
+  org: my-org                  # your Sentry org slug
+  # auth_token: read from SENTRY_AUTH_TOKEN env var — DO NOT inline here
+  # Optional:
+  # release: ${PACKAGE_NAME}@${VERSION}+${BUILD_NUMBER}
+  # dist: ${BUILD_NUMBER}

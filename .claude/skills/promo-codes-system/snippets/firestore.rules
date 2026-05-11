@@ -1,0 +1,32 @@
+// firestore.rules — promo codes & redemptions
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // promoCodes: read NOT allowed from client (force redemption via Cloud Function).
+    // Write only via Admin SDK (Cloud Function / generator script).
+    match /promoCodes/{code} {
+      allow read, write: if false;
+    }
+
+    // redemptions: read own, write only via Admin SDK.
+    // Composite ID format: {code}_{uid}
+    match /redemptions/{id} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // rateLimits: per-user, no client access.
+    match /rateLimits/{id} {
+      allow read, write: if false;
+    }
+
+    // users/{uid}/entitlements: read own only.
+    match /users/{uid}/entitlements/{entId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;     // only Cloud Function writes
+    }
+  }
+}

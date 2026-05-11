@@ -1,0 +1,103 @@
+# =====================================================================
+# Mobile App Development Template — .gitignore
+# This is the TEMPLATE .gitignore. When users copy this template to a
+# real project, app-bootstrap will EXTEND this with Flutter-specific
+# entries (build/, .dart_tool/, etc.) per architecture §13.
+# =====================================================================
+
+# ─── Claude Code local settings (per-developer) ──────────────────────
+# settings.json IS committed (team-wide rules)
+# settings.local.json is per-developer "Always allow" choices
+.claude/settings.local.json
+
+# ─── Project artifacts that should NOT be committed in template ──────
+# (These ARE committed in real projects after generation. In the
+# template repo, they don't exist yet.)
+
+# Real PRD / architecture / design-system / etc. populate AT runtime.
+# We commit the EMPTY .project/ structure (with README.md), but real
+# project content is project-specific. If you're using this template
+# for an actual app, REMOVE these lines so .project/* gets tracked.
+# (Comment these out in your real project's .gitignore)
+# .project/prd.md
+# .project/architecture.md
+# .project/design-system.md
+# .project/layouts.md
+# .project/features.md
+# .project/security-checklist.md
+# .project/perf-checklist.md
+# .project/compliance-checklist.md
+# .project/known-issues.md
+# .project/handoffs.md
+# .project/phases/phase-*.md
+# .project/api/openapi.yaml
+# .project/api/README.md
+# .project/legal/*.md
+# !.project/legal/*.template.md
+# .project/perf-snapshots/*.md
+# .project/l10n-deltas/*.arb
+# .project/aso/*.md
+# .project/release-notes/*.md
+
+# ─── Macros that DEFAULT to gitignored (uncomment in real project as needed) ──
+# Phase work-in-progress notes (if you maintain personal notes per phase)
+# .project/notes/
+
+# ─── OS / IDE ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# ─── Flutter (real projects extend this — app-bootstrap adds full Flutter ignore set) ──
+# Below entries are app-bootstrap's typical additions:
+# build/
+# .dart_tool/
+# .flutter-plugins
+# .flutter-plugins-dependencies
+# .packages
+# .pub-cache/
+# .pub/
+# pubspec.lock           # commit for apps, ignore for libraries
+# coverage/
+
+# Generated files commit policy: per architecture §13, KEEP these
+# !**/*.g.dart
+# !**/*.freezed.dart
+
+# But ignore ENVied secret-embedding generated file:
+# lib/src/core/env/env.g.dart
+
+# Env files (compile-time only — never commit)
+# env/*.env
+# **/.env
+# **/.env.*
+
+# ─── Native ───────────────────────────────────────────────────────────
+# iOS:
+# ios/Pods/
+# ios/.symlinks/
+# ios/Flutter/Generated.xcconfig
+# ios/Flutter/flutter_export_environment.sh
+# ios/Runner/GoogleService-Info.plist  # uncomment to ignore Firebase config
+
+# Android:
+# android/.gradle/
+# android/app/google-services.json     # uncomment to ignore Firebase config
+# android/app/key.jks
+# android/app/keystore.properties
+
+# ─── Tests / Coverage ─────────────────────────────────────────────────
+coverage/
+*.lcov
+test_results/
+
+# ─── Misc ─────────────────────────────────────────────────────────────
+*.log
+*.bak
+*.tmp
+.tmp/
+node_modules/
