@@ -52,7 +52,7 @@ Every feature/module is built as a **phase**. Phases are atomic and independentl
 ```
 DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
       → CODE_REVIEW → [BUG_HUNT] → SECURITY_REVIEW → PERFORMANCE_REVIEW
-      → COMPLIANCE_CHECK → QA_SMOKE_TEST → USER_APPROVAL
+      → COMPLIANCE_CHECK → BUILD_VERIFIED → QA_SMOKE_TEST → USER_APPROVAL
       → CHRONICLED → SKILL_EXTRACTED → DONE
 ```
 
@@ -69,11 +69,16 @@ DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
 | `CODE_REVIEW` / `BUG_HUNT` | `SECURITY_REVIEW` | review approved | NO |
 | `SECURITY_REVIEW` | `PERFORMANCE_REVIEW` | security passed | NO |
 | `PERFORMANCE_REVIEW` | `COMPLIANCE_CHECK` | perf passed | NO |
-| `COMPLIANCE_CHECK` | `QA_SMOKE_TEST` | compliance passed | NO |
+| `COMPLIANCE_CHECK` | `BUILD_VERIFIED` | build+boot gate passed | NO |
+| `BUILD_VERIFIED` | `QA_SMOKE_TEST` | qa-test-guide | NO |
 | `QA_SMOKE_TEST` | `USER_APPROVAL` | qa-test-guide produced scenarios | NO |
 | `USER_APPROVAL` | `CHRONICLED` | user typed approval | NO |
 | `CHRONICLED` | `SKILL_EXTRACTED` | feature-chronicler updated features.md | NO |
 | `SKILL_EXTRACTED` | `DONE` | skill-extractor decided + acted | NO |
+
+### BUILD_VERIFIED — the runtime gate (NEVER skippable)
+
+**BUILD_VERIFIED:** the phase's branch must produce a release-mode-equivalent build artifact for each flavor AND boot to its first screen on a device/emulator with zero uncaught exceptions. Evidence (build log tail + boot-test pass) recorded in the phase file's `## Build Verification` section. No phase may reach `USER_APPROVAL` without this. This gate is NEVER skippable — not conditionally, not in autonomous mode, not for "trivial" phases. It exists because static gates (`flutter analyze`, mocked unit/widget tests, read-only review, line coverage) structurally cannot see compile-time, app-boot, or real-backend defects. A phase that is statically green but never built or booted is NOT verified.
 
 **Bug loop:** If `BUG_HUNT` finds a bug, state returns to `IN_PROGRESS`. Loop continues until reviewer score ≤ `medium`.
 
@@ -202,8 +207,9 @@ user_approved: false          # computed by orchestrator on USER_APPROVAL gate
 4. `## Decisions Log` (date-stamped)
 5. `## Skipped Steps` (with reasons)
 6. `## Open Questions / Blockers`
-7. `## Smoke Test Log` (filled by qa-test-guide)
-8. `## Handoff Notes` (each agent leaves notes for the next)
+7. `## Build Verification` (build log tail + boot-test result — gates `BUILD_VERIFIED`)
+8. `## Smoke Test Log` (filled by qa-test-guide)
+9. `## Handoff Notes` (each agent leaves notes for the next)
 
 ### `phases/INDEX.md` format
 
@@ -315,6 +321,14 @@ Every agent must enforce these baselines. Violations block progression.
 - Each non-trivial widget has a widget test
 - Critical user flows have integration tests
 - Coverage target: ≥70% on `lib/` excluding generated files
+- Line coverage from mocked tests ≠ integration coverage. A feature that touches a backend is NOT "tested" until its real backend path is exercised once (see Runtime below).
+
+### Runtime (every phase — enforced, not aspirational)
+- `flutter build apk --flavor <env> --debug` (and the iOS equivalent) MUST succeed in CI
+- App boots to first screen on emulator with no uncaught exception (automated boot test)
+- At least one NON-MOCKED integration test per backend-touching feature, run against a real local backend (e.g. `supabase start`)
+- `walking_skeleton_invariant` is VERIFIED by the build+boot gate, never merely declared
+- The `build-and-boot` and `backend-integration` CI jobs MUST be green before any phase can enter `BUILD_VERIFIED`. Static green (analyze + mocked tests + line coverage) is necessary but NOT sufficient.
 
 ### Security (MASVS-aligned)
 - No secrets in source — use `--dart-define` + secure CI vars

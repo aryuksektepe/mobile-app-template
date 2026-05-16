@@ -57,7 +57,7 @@ The "active phase" is the phase to act on right now. Resolution rules in order:
 ```
 DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
       → CODE_REVIEW → [BUG_HUNT] → SECURITY_REVIEW → PERFORMANCE_REVIEW
-      → COMPLIANCE_CHECK → QA_SMOKE_TEST → USER_APPROVAL
+      → COMPLIANCE_CHECK → BUILD_VERIFIED → QA_SMOKE_TEST → USER_APPROVAL
       → CHRONICLED → SKILL_EXTRACTED → DONE
 ```
 
@@ -76,11 +76,16 @@ DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
 | `BUG_HUNT` | If bugs found → set status back to `IN_PROGRESS`, dispatch `coder`. If clean → `security-reviewer` | Bug-hunter wrote `## Bug Hunt` block with verdict |
 | `SECURITY_REVIEW` | `performance-reviewer` | `security-reviewer` updated `.project/security-checklist.md` with this phase's row |
 | `PERFORMANCE_REVIEW` | `compliance` | Performance reviewer wrote a `## Performance Review` block with metrics |
-| `COMPLIANCE_CHECK` | If user-facing strings changed → `localization` first, then `qa-test-guide`. Else `qa-test-guide` directly | Compliance reviewer wrote a `## Compliance Check` block |
+| `COMPLIANCE_CHECK` | Transition to `BUILD_VERIFIED`. If `## Build Verification` already holds complete evidence → continue per next row. Else dispatch `coder` (phase ≥ 02) / `app-bootstrap` (phase 01) to produce build+boot evidence; status stays `BUILD_VERIFIED` | Compliance reviewer wrote a `## Compliance Check` block |
+| `BUILD_VERIFIED` | If `## Build Verification` evidence is complete (see gate below): user-facing strings changed → `localization` first, then `qa-test-guide`; else `qa-test-guide`. If evidence absent/partial → route back to `coder`/`app-bootstrap`, status stays `BUILD_VERIFIED` | `## Build Verification` section present with build-log-tail exit 0 for EACH flavor + boot-test PASS line (+ non-mocked integration PASS when the phase touches a backend) |
 | `QA_SMOKE_TEST` | **STOP — ask user** | qa-test-guide produced `## Smoke Test Log` with numbered scenarios |
 | `USER_APPROVAL` | **STOP — wait for user** (do not dispatch) | n/a |
 | `CHRONICLED` | `skill-extractor` | `feature-chronicler` updated `.project/features.md` |
 | `SKILL_EXTRACTED` | None — set `status: DONE`, update `phases/INDEX.md`, dispatch nothing, return | `skill-extractor` either created a new skill (and updated `.claude/skills/INDEX.md`) or wrote a `## Skill Extraction Decision` block explaining why none was created |
+
+### The BUILD_VERIFIED gate (never skippable)
+
+The orchestrator MUST NOT transition a phase out of `BUILD_VERIFIED` unless the phase file's `## Build Verification` section contains: (a) a non-empty build log tail showing exit 0 for each flavor, and (b) a boot-test PASS line. When the phase touches a backend, also require (c) a non-mocked integration PASS line run against a real local backend. If any is absent, route back to `coder` (or `app-bootstrap` on phase 01) with a soft nudge naming the missing evidence — do NOT advance. This gate is NEVER skippable: not conditionally, not via `## Skipped Steps`, and **not in autonomous mode** (`auto_approve: true` does not relax it — autonomous mode bypasses human-approval gates, not runtime verification). A statically-green phase that was never built or booted has NOT passed this gate.
 
 ### Conditional skips (the only legal skips)
 
@@ -103,7 +108,7 @@ STEP 2: Read its frontmatter and body.
 STEP 3: Validate frontmatter:
         - All required keys present? (phase_id, title, status, owner_agent,
           last_updated, skills_used, skills_to_extract, risk_score, user_approved)
-        - status is one of the 15 valid values?
+        - status is one of the 16 valid values?
         - owner_agent is one of the 23 valid agents?
         If any check fails → produce a Turkish error to the user, do NOT dispatch.
 

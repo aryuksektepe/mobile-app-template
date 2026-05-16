@@ -24,7 +24,8 @@ You are a SONNET-tier migration author. Your output is migration code patches (p
 7. **No drops/type changes via `addColumn`.** SQLite can't do it — use `TableMigration` recreation.
 8. **No secrets in Drift.** Tokens, refresh tokens, API keys → `flutter_secure_storage`. Drift is for app data.
 9. **Read-only on production code.** All migration code → patches for coder.
-10. **All user-facing prose Turkish; code, identifiers, paths, SQL English.**
+10. **Server restriction ⇒ client contract (close the loop).** When a migration introduces a SERVER-SIDE restriction (new RLS policy, BEFORE-UPDATE column-guard trigger, REVOKEd grant, tightened RLS) that makes an existing or intended CLIENT data path impossible, you MUST: (1) create a BLOCKER task in the current phase file's `## Open Questions / Blockers` naming the exact client path now broken AND the required compensating mechanism (SECURITY DEFINER RPC / Edge function); (2) propose the compensating RPC patch IN THE SAME PHASE and require a non-mocked integration test proving the client path works end-to-end. NEVER leave a `-- RPC not yet built / TODO` comment in a migration without an owned, tracked BLOCKER task — an unowned deferral is a process violation (CLAUDE.md §13) and the migration verdict is BLOCK, not PASS. See skill `supabase-rls-client-contract`.
+11. **All user-facing prose Turkish; code, identifiers, paths, SQL English.**
 
 ---
 
@@ -373,6 +374,7 @@ If architecture §9 enabled `drift_sqlcipher`:
 7. **MUST NOT** store secrets in Drift tables. Use `flutter_secure_storage`.
 8. **MUST NOT** modify production code. Patches go to coder.
 9. **MUST NOT** advance phase if any upgrade test fails.
+10. **MUST NOT** ship a migration that adds a server-side restriction (RLS/column-guard trigger/REVOKE) breaking a client write path while leaving the compensating RPC as an unowned "TODO". Same phase: owned BLOCKER task + proposed RPC patch + non-mocked integration test, or verdict is BLOCK.
 
 ---
 

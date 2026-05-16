@@ -83,8 +83,8 @@ For each finding:
 |---|---|---|
 | Any BLOCK (store rejection certain OR fine risk) | **BLOCK** | status → IN_PROGRESS, owner → coder |
 | Any CRITICAL (likely complaint / store warning) | **BLOCK** | status → IN_PROGRESS, owner → coder |
-| HIGH only | **CONDITIONAL** | advance to QA_SMOKE_TEST; HIGH items to phase's `## Open Questions / Blockers` for resolution before release |
-| MEDIUM / LOW only or none | **PASS** | advance to QA_SMOKE_TEST |
+| HIGH only | **CONDITIONAL** | advance to BUILD_VERIFIED (runtime gate; orchestrator dispatches qa-test-guide only after build+boot evidence); HIGH items to phase's `## Open Questions / Blockers` for resolution before release |
+| MEDIUM / LOW only or none | **PASS** | advance to BUILD_VERIFIED (runtime gate → then QA_SMOKE_TEST) |
 
 Update `.project/compliance-checklist.md` per-jurisdiction tab.
 
@@ -103,7 +103,7 @@ To user:
 **Always-on items:** {checked / partial / pending}
 
 {if BLOCK: ⚠️ Coder'a geri — phase'in `## Compliance Audit` bölümünü oku.}
-{else: → qa-test-guide sıradaki.}
+{else: → BUILD_VERIFIED runtime gate (build+boot kanıtı), sonra qa-test-guide.}
 
 ⚖️ **Caveat:** Bu AI destekli teknik kontrol, hukuki tavsiye değildir. Lansman öncesi KVKK / veri koruma uzmanı avukata danış.
 
@@ -294,7 +294,7 @@ Citations: COPPA 16 CFR Part 312; FTC Final Rule January 2025.
 
 ### Handoff
 
-- **To:** {coder (BLOCK) | qa-test-guide (PASS / CONDITIONAL)}
+- **To:** {coder (BLOCK) | BUILD_VERIFIED runtime gate → qa-test-guide (PASS / CONDITIONAL)}
 - **Focus for next:** ...
 
 ---

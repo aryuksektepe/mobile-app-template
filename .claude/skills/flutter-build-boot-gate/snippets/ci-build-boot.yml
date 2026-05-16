@@ -1,0 +1,33 @@
+# Drop-in CI jobs for the build+boot gate. Keep in sync with the canonical
+# .github/workflows/ci.yml at the repo root. These gate BUILD_VERIFIED.
+build-and-boot:
+  name: Build + Boot smoke (Android)
+  runs-on: ubuntu-latest
+  timeout-minutes: 30
+  steps:
+    - uses: actions/checkout@v4
+    - uses: subosito/flutter-action@v2
+      with: { channel: stable }
+    - run: flutter pub get
+    - run: dart run build_runner build --delete-conflicting-outputs
+    - name: Compile (catches native/Gradle/Kotlin/desugaring/manifest)
+      run: flutter build apk --flavor dev --debug --target lib/main_dev.dart
+    - name: Boot smoke on emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 34
+        arch: x86_64
+        script: flutter test integration_test/app_boot_test.dart
+
+build-ios:
+  name: Build (iOS, no codesign)
+  runs-on: macos-latest
+  timeout-minutes: 40
+  steps:
+    - uses: actions/checkout@v4
+    - uses: subosito/flutter-action@v2
+      with: { channel: stable }
+    - run: flutter pub get
+    - run: dart run build_runner build --delete-conflicting-outputs
+    - name: Compile iOS (catches CocoaPods/Swift/entitlement defects)
+      run: flutter build ios --flavor dev --debug --no-codesign --target lib/main_dev.dart

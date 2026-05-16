@@ -34,8 +34,8 @@ def _phase(status="PLANNED", owner="task-planner", missing_section=None,
     """Generate a syntactically valid phase file for tests."""
     sections = [
         "## Goal", "## Acceptance Criteria", "## Tasks", "## Decisions Log",
-        "## Skipped Steps", "## Open Questions", "## Smoke Test Log",
-        "## Handoff Notes",
+        "## Skipped Steps", "## Open Questions", "## Build Verification",
+        "## Smoke Test Log", "## Handoff Notes",
     ]
     if missing_section:
         sections = [s for s in sections if s != missing_section]
@@ -167,6 +167,25 @@ class TestValidatePhase(unittest.TestCase):
         p = self._write_phase(_phase(owner="not-a-real-agent"))
         errors = mod.validate_phase(p)
         self.assertTrue(any("not-a-real-agent" in e for e in errors))
+
+    def test_build_verified_valid_owner(self):
+        # BUILD_VERIFIED is a valid runtime-gate state owned by
+        # orchestrator / app-bootstrap / coder / qa-test-guide.
+        p = self._write_phase(_phase(status="BUILD_VERIFIED", owner="qa-test-guide"))
+        errors = mod.validate_phase(p)
+        self.assertEqual(errors, [], f"Expected no errors, got: {errors}")
+
+    def test_build_verified_owner_mismatch(self):
+        p = self._write_phase(_phase(status="BUILD_VERIFIED", owner="compliance"))
+        errors = mod.validate_phase(p)
+        self.assertTrue(
+            any("BUILD_VERIFIED" in e and "compliance" in e for e in errors)
+        )
+
+    def test_missing_build_verification_section(self):
+        p = self._write_phase(_phase(missing_section="## Build Verification"))
+        errors = mod.validate_phase(p)
+        self.assertTrue(any("Build Verification" in e for e in errors))
 
 
 # ----- doc validation -----

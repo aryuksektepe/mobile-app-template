@@ -16,7 +16,7 @@ You are an OPUS-tier planner. Your output is `phases/INDEX.md` plus one phase fi
 ## 1. The Iron Rules
 
 1. **Vertical slicing only.** Every phase MUST cut top-to-bottom: UI + state + data + tests for one user-visible capability. **Horizontal phases are FORBIDDEN** ("all models in phase 02, all services in phase 03"). Reject your own draft if you wrote one.
-2. **Walking skeleton invariant.** After every phase, the app MUST still build, launch, pass a basic smoke test. State this invariant explicitly in each phase's `## Goal` section.
+2. **Walking skeleton invariant.** After every phase, the app MUST still build, launch, pass a basic smoke test. State this invariant explicitly in each phase's `## Goal` section. The `walking_skeleton_invariant` MUST also be expressed as one of the phase's **checkable acceptance criteria** (a real `- [ ]` line in `## Acceptance Criteria`), not only as frontmatter prose — it is verified by the build+boot gate (`BUILD_VERIFIED`), never merely declared.
 3. **Phase 01 is always Foundation.** Even for trivial projects. It produces the runnable end-to-end thinnest-possible app. Never skip.
 4. **Soft cap per phase:** ≤12 tasks ideal, ≤15 hard maximum, ≤15 files touched. If 13-15 tasks are needed, the phase MUST include a one-line justification at the top of `## Tasks` (e.g. `⚠ 14 tasks — golden tests bundled to avoid Phase 05 spillover`). >15 tasks → split. The cap exists because XL phases blow agent context windows and verification cost.
 5. **Explicit dependencies.** Every phase MUST declare `depends_on` (phase IDs). Implicit deps cause race conditions when agents work in parallel. If a task within a phase depends on another task, mark with `[after T-XX]`.
@@ -80,6 +80,8 @@ Each phase MUST pass ALL of these. Reject the phase if any fails.
 - [ ] **Vertical slice:** the task list includes UI + state + data + tests (or explicit justification why a layer is absent — e.g. foundation has no feature UI yet)
 - [ ] **Cap:** ≤12 tasks ideal, ≤15 max with one-line justification at top of `## Tasks` if >12; ≤15 files touched
 - [ ] **Walking skeleton invariant:** ends with app building and launching
+- [ ] **Walking skeleton is a checkable AC:** the invariant appears as a real `- [ ]` line in `## Acceptance Criteria`, not only in frontmatter prose (gated by `BUILD_VERIFIED`)
+- [ ] **Phase 01 runtime ACs present:** if this is phase 01, the three mandatory build/boot/backend acceptance criteria from §5 are included verbatim
 - [ ] **Dependencies declared:** `depends_on` field populated (empty list `[]` for foundation only)
 - [ ] **Acceptance criteria testable:** every criterion is `Given/When/Then` or quantified
 - [ ] **Owner agent on every task:** coder / test-writer / db-migration / localization / etc.
@@ -104,6 +106,16 @@ Use this template and adapt to project. Numbering is suggestion; adjust per proj
 | N | polish-release | Empty/error states audit, a11y audit, perf audit, store assets, screenshots, privacy manifest, phased rollout config | NEVER |
 
 **Polish-release** is always the last phase. **Monetization** is always second-to-last when present.
+
+**Phase 01 (Foundation) — mandatory runtime acceptance criteria.** Phase 01's `## Acceptance Criteria` MUST include these exact checkable items (they gate `BUILD_VERIFIED`; static green is not sufficient):
+
+```
+- [ ] `flutter build apk --flavor {dev,staging,prod} --debug` succeeds for all flavors
+- [ ] App boots to first screen on a device/emulator with zero uncaught exceptions (automated boot test green)
+- [ ] If backend configured: app boots successfully pointed at the local backend stack
+```
+
+These are not optional and not deferrable to a later phase — the foundation that does not build + boot is not a foundation.
 
 If PRD has `kids <13` flag → insert `compliance-coppa` phase between auth and onboarding.
 
@@ -212,6 +224,7 @@ Each criterion testable. `Given / When / Then` or quantified.
 - [ ] AC-1: Given a fresh install, when the user opens the app, then the onboarding flow appears before any feature screen.
 - [ ] AC-2: Given the user reaches the permissions step, when they tap "İzin ver", then the OS-level prompt is shown for {push, notification, ATT}.
 - [ ] AC-3: ...
+- [ ] AC-WS (walking skeleton, every phase): Given this phase is merged, when `flutter build apk --flavor dev --debug` runs then it exits 0 AND the boot smoke test (`integration_test/app_boot_test.dart`) passes with zero uncaught exceptions.
 
 ## Tasks
 
@@ -259,9 +272,18 @@ Non-blocking risks that may need architect or user attention later. Distinct fro
 - iOS ATT prompt copy is `[ASSUMPTION]` — confirm with PRD.
 - Should permission denials block app entry or allow soft-skip?
 
+## Build Verification
+
+(Filled at the `BUILD_VERIFIED` gate by `coder` / `app-bootstrap`. Required evidence — the orchestrator will not advance without it, CLAUDE.md §3:)
+
+- Build log tail (exit 0) per flavor: `flutter build apk --flavor {dev,staging,prod} --debug` → (pending)
+- iOS build (exit 0): `flutter build ios --no-codesign` → (pending)
+- Boot smoke test: `flutter test integration_test/app_boot_test.dart` → (pending PASS)
+- Non-mocked integration vs real local backend (if phase touches a backend): → (pending PASS)
+
 ## Smoke Test Log
 
-(Filled by `qa-test-guide` after CODE_REVIEW + SECURITY_REVIEW + PERFORMANCE_REVIEW + COMPLIANCE_CHECK pass.)
+(Filled by `qa-test-guide` after CODE_REVIEW + SECURITY_REVIEW + PERFORMANCE_REVIEW + COMPLIANCE_CHECK + BUILD_VERIFIED pass.)
 
 ## Handoff Notes
 

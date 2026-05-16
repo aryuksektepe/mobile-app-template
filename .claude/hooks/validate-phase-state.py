@@ -52,6 +52,7 @@ VALID_STATUSES = {
     "SECURITY_REVIEW",
     "PERFORMANCE_REVIEW",
     "COMPLIANCE_CHECK",
+    "BUILD_VERIFIED",
     "QA_SMOKE_TEST",
     "USER_APPROVAL",
     "CHRONICLED",
@@ -97,6 +98,7 @@ STATUS_TO_OWNER = {
     "SECURITY_REVIEW": {"security-reviewer"},
     "PERFORMANCE_REVIEW": {"performance-reviewer"},
     "COMPLIANCE_CHECK": {"compliance"},
+    "BUILD_VERIFIED": {"orchestrator", "app-bootstrap", "coder", "qa-test-guide"},
     "QA_SMOKE_TEST": {"qa-test-guide"},
     "USER_APPROVAL": {"user", "qa-test-guide"},
     "CHRONICLED": {"feature-chronicler"},
@@ -132,6 +134,7 @@ REQUIRED_BODY_SECTIONS = [
     "## Decisions Log",
     "## Skipped Steps",
     "## Open Questions",
+    "## Build Verification",
     "## Smoke Test Log",
     "## Handoff Notes",
 ]

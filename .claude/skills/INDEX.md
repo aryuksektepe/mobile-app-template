@@ -3,8 +3,8 @@
 > **coder ZORUNLU bunu okumalı.** Her task için: tokenize → score against `Triggers` → match → open SKILL.md → follow verbatim.
 > Match yoksa: implement from scratch, slug'ı phase frontmatter'da `skills_to_extract:`'e ekle.
 
-**Last updated:** 2026-05-10
-**Total skills:** 13 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
+**Last updated:** 2026-05-16
+**Total skills:** 15 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
 
 > **Validation status legend:**
 > - `pre-seeded` — written from research, NOT yet validated in a real project. Treat as ADAPT not VERBATIM. Append findings to skill's pitfalls.md after first use.
@@ -89,6 +89,13 @@
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
 | [`firebase-core-setup`](firebase-core-setup/SKILL.md) | FlutterFire foundation — flutterfire_cli, multi-flavor (dev/stg/prod) Firebase projects, App Check (Play Integrity + DeviceCheck) | firebase, flutterfire, firebase init, firebase setup, firebase_core, flavor, app check, google-services.json, GoogleService-Info.plist | ios, android | 2026-05-10 | pre-seeded |
+| [`flutter-build-boot-gate`](flutter-build-boot-gate/SKILL.md) | Compile + first-boot smoke gate (phase-01 + CI) — proves the app actually builds and launches before any review/QA. Catches native/Gradle/Kotlin/desugaring/manifest + bootstrap runtime aborts static analysis and mocked tests cannot | build gate, boot smoke, does it run, flutter build apk, walking skeleton, app launches, integration_test boot, BUILD_VERIFIED, splash lock | ios, android | 2026-05-16 | pre-seeded |
+
+## Backend & Data Contracts
+
+| Slug | Purpose | Triggers | Platforms | Last Verified | Status |
+|---|---|---|---|---|---|
+| [`supabase-rls-client-contract`](supabase-rls-client-contract/SKILL.md) | Every client DB write path must have a matching, integration-tested RLS/RPC path. SECURITY DEFINER own-row upsert pattern; closes the "server restriction breaks client write, RPC left as TODO" loop | supabase write, RLS policy, column guard, security definer, rpc, could not find the column, violates row-level security, profile upsert, onboarding write, db reset foreign key | ios, android | 2026-05-16 | pre-seeded |
 
 ---
 

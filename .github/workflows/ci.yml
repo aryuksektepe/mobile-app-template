@@ -1,0 +1,80 @@
+# Canonical CI for projects built from this template.
+#
+# Static checks (analyze + mocked tests + line coverage) are NECESSARY but NOT
+# SUFFICIENT: they structurally cannot see compile-time, app-boot, or real-backend
+# defects. The `build-and-boot`, `build-ios`, and `backend-integration` jobs are
+# the runtime gate that makes `BUILD_VERIFIED` enforceable (CLAUDE.md §3, §9).
+# No phase may reach BUILD_VERIFIED with these jobs red.
+#
+# app-bootstrap regenerates a per-project copy of this file during Phase 01
+# (its §5.D) — that copy MUST keep these four jobs. Drop build-ios only for an
+# Android-only project; drop backend-integration only when there is no backend
+# at all. Never drop them silently — log the skip in the phase file.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  analyze-test:
+    name: Static — analyze + mocked tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter test --coverage
+
+  build-and-boot:
+    name: Build + Boot smoke (Android)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - name: Compile (catches native/Gradle/Kotlin/desugaring/manifest)
+        run: flutter build apk --flavor dev --debug --target lib/main_dev.dart
+      - name: Boot smoke on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          script: flutter test integration_test/app_boot_test.dart
+
+  build-ios:
+    name: Build (iOS, no codesign)
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - name: Compile iOS (catches CocoaPods/Swift/entitlement defects)
+        run: flutter build ios --flavor dev --debug --no-codesign --target lib/main_dev.dart
+
+  backend-integration:
+    name: Non-mocked integration (local Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - run: supabase start
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter pub get
+      - name: Run integration tests against real local backend
+        run: flutter test integration_test/ --exclude-tags=mocked
