@@ -52,7 +52,7 @@ Every feature/module is built as a **phase**. Phases are atomic and independentl
 ```
 DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
       → CODE_REVIEW → [BUG_HUNT] → SECURITY_REVIEW → PERFORMANCE_REVIEW
-      → COMPLIANCE_CHECK → BUILD_VERIFIED → QA_SMOKE_TEST → USER_APPROVAL
+      → INTEGRATION_SMOKE → COMPLIANCE_CHECK → QA_SMOKE_TEST → USER_APPROVAL
       → CHRONICLED → SKILL_EXTRACTED → DONE
 ```
 
@@ -68,17 +68,27 @@ DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
 | `CODE_REVIEW` | `BUG_HUNT` | reviewer risk score = `high` | conditional |
 | `CODE_REVIEW` / `BUG_HUNT` | `SECURITY_REVIEW` | review approved | NO |
 | `SECURITY_REVIEW` | `PERFORMANCE_REVIEW` | security passed | NO |
-| `PERFORMANCE_REVIEW` | `COMPLIANCE_CHECK` | perf passed | NO |
-| `COMPLIANCE_CHECK` | `BUILD_VERIFIED` | build+boot gate passed | NO |
-| `BUILD_VERIFIED` | `QA_SMOKE_TEST` | qa-test-guide | NO |
+| `PERFORMANCE_REVIEW` | `INTEGRATION_SMOKE` | perf passed | NO |
+| `INTEGRATION_SMOKE` | `COMPLIANCE_CHECK` | integration smoke evidence complete (build+boot+e2e+contract) | NO |
+| `COMPLIANCE_CHECK` | `QA_SMOKE_TEST` | compliance passed | NO |
 | `QA_SMOKE_TEST` | `USER_APPROVAL` | qa-test-guide produced scenarios | NO |
 | `USER_APPROVAL` | `CHRONICLED` | user typed approval | NO |
 | `CHRONICLED` | `SKILL_EXTRACTED` | feature-chronicler updated features.md | NO |
 | `SKILL_EXTRACTED` | `DONE` | skill-extractor decided + acted | NO |
 
-### BUILD_VERIFIED — the runtime gate (NEVER skippable)
+### INTEGRATION_SMOKE — the runtime gate (NEVER skippable)
 
-**BUILD_VERIFIED:** the phase's branch must produce a release-mode-equivalent build artifact for each flavor AND boot to its first screen on a device/emulator with zero uncaught exceptions. Evidence (build log tail + boot-test pass) recorded in the phase file's `## Build Verification` section. No phase may reach `USER_APPROVAL` without this. This gate is NEVER skippable — not conditionally, not in autonomous mode, not for "trivial" phases. It exists because static gates (`flutter analyze`, mocked unit/widget tests, read-only review, line coverage) structurally cannot see compile-time, app-boot, or real-backend defects. A phase that is statically green but never built or booted is NOT verified.
+**INTEGRATION_SMOKE** runs *before* `COMPLIANCE_CHECK` so that compliance and QA operate on an app that has actually been built, booted, and exercised against a real backend — not on a declared one. Evidence is recorded in the phase file's `## Integration Smoke` section; the orchestrator will not transition out of this state without it. This gate is NEVER skippable — not conditionally, not via `## Skipped Steps`, not in autonomous mode (`auto_approve: true` bypasses human-approval gates, NOT runtime verification), not for "trivial" phases.
+
+**Exit criteria — ALL must have execution evidence in `## Integration Smoke`:**
+
+1. **Builds.** A real `flutter build <flavor>` is green for each flavor (debug is fine — this is a real compile, NOT `flutter analyze`).
+2. **Boots.** The app started on an emulator/simulator or device: boot log + `BOOT_OK` marker (`main()` end emits `debugPrint('BOOT_OK flavor=…')`) + a `splash → first real screen` assertion (no uncaught exception, no rebuild/dispose storm).
+3. **Real backend, no mocks.** For each of the phase's PRD-FRs, ≥1 end-to-end flow ran against a real backend (local Supabase / staging) with **no mocked dependency**; HTTP trace (Kong/proxy access log) + DB row evidence pasted into the phase file.
+4. **Edge/server work proven.** Every new Edge Function / RPC / migration was applied to a real local stack and received ≥1 real authenticated call returning 2xx (not just "file written").
+5. **Reachable.** Every new screen has a verified concrete tap-path from its PRD entry point (`<screen A> → <action> → <this screen>`), executed — "defined route" ≠ "reachable".
+
+**Why this exists:** static gates (`flutter analyze`, mocked unit/widget/golden tests, read-only review, line coverage) structurally cannot see the three empirically-dominant failure classes: (A) Riverpod/stream lifecycle (rebuild/dispose/churn/yield only manifest in a running app), (B) client↔backend contract drift (a mock that encodes the bug instead of verifying the contract), (C) integration/accessibility gaps (a screen exists but no flow reaches it). Green tests + clean analyze + passing reviews are **not a running app**. Until the app is actually built and run against a real backend each phase, `DONE` is a declaration, not evidence.
 
 **Bug loop:** If `BUG_HUNT` finds a bug, state returns to `IN_PROGRESS`. Loop continues until reviewer score ≤ `medium`.
 
@@ -207,7 +217,7 @@ user_approved: false          # computed by orchestrator on USER_APPROVAL gate
 4. `## Decisions Log` (date-stamped)
 5. `## Skipped Steps` (with reasons)
 6. `## Open Questions / Blockers`
-7. `## Build Verification` (build log tail + boot-test result — gates `BUILD_VERIFIED`)
+7. `## Integration Smoke` (build + boot + real-backend e2e + contract + reachability evidence — gates `INTEGRATION_SMOKE`)
 8. `## Smoke Test Log` (filled by qa-test-guide)
 9. `## Handoff Notes` (each agent leaves notes for the next)
 
@@ -323,12 +333,15 @@ Every agent must enforce these baselines. Violations block progression.
 - Coverage target: ≥70% on `lib/` excluding generated files
 - Line coverage from mocked tests ≠ integration coverage. A feature that touches a backend is NOT "tested" until its real backend path is exercised once (see Runtime below).
 
-### Runtime (every phase — enforced, not aspirational)
-- `flutter build apk --flavor <env> --debug` (and the iOS equivalent) MUST succeed in CI
-- App boots to first screen on emulator with no uncaught exception (automated boot test)
-- At least one NON-MOCKED integration test per backend-touching feature, run against a real local backend (e.g. `supabase start`)
-- `walking_skeleton_invariant` is VERIFIED by the build+boot gate, never merely declared
-- The `build-and-boot` and `backend-integration` CI jobs MUST be green before any phase can enter `BUILD_VERIFIED`. Static green (analyze + mocked tests + line coverage) is necessary but NOT sufficient.
+### Runtime — the `INTEGRATION_SMOKE` bar (every phase — enforced, not aspirational)
+- `flutter build <flavor>` (real compile, not `flutter analyze`) green for each flavor; iOS equivalent in CI
+- App boots on an emulator/device: `BOOT_OK` marker + `splash → first real screen`, no uncaught exception, no rebuild/dispose storm
+- ≥1 NON-MOCKED end-to-end flow per phase FR against a real backend (`supabase start` / staging); HTTP trace + DB row evidence pasted into `## Integration Smoke`
+- Every new Edge Function / RPC / migration applied to a real local stack with ≥1 real authenticated call → 2xx (not just "file written")
+- Every new screen has an executed, concrete tap-path from its PRD entry point ("defined route" ≠ "reachable")
+- **Contract parity (no mock may encode a bug):** every `functions.invoke` / REST call has a test asserting HTTP method + body field names against the real Edge/OpenAPI signature; every `async*` provider has a yield-contract test; boundary mocks (`any(named:'body')`) at the client↔backend edge are forbidden — assert the contract or defer it to `INTEGRATION_SMOKE`
+- `walking_skeleton_invariant` is VERIFIED by this gate, never merely declared
+- The CI runtime jobs (`build-and-boot`, `build-ios`, `backend-integration`, `integration-smoke`) MUST be green before a phase leaves `INTEGRATION_SMOKE`. Static green (analyze + mocked tests + line coverage) is necessary but NOT sufficient — it is not a running app.
 
 ### Security (MASVS-aligned)
 - No secrets in source — use `--dart-define` + secure CI vars
@@ -354,6 +367,11 @@ Every agent must enforce these baselines. Violations block progression.
 - App size <50MB initial install (target)
 - No memory leaks across navigation cycles
 - Network calls batched, cached, deduplicated
+
+### CI economy & determinism
+- **Batch, don't spray.** Run the full gate set locally; push in batches and let CI confirm once per batch — not a CI run per commit. Per-commit-push CI burns the Actions minute budget fast (a real incident: ~2000 CI minutes drained by per-commit pushes in one session).
+- **Generated artifacts must be deterministic or excluded.** A repo-wide `git diff --exit-code` gate must NOT trip on non-deterministic generated files (timestamped audit reports, etc.). Either generate them deterministically (fixed timestamp/seed) or exclude them from the diff gate. Non-deterministic generated diffs are a recurring false-fail source.
+- After running diagnostics/codegen, regenerate clean: `.g.dart`/`.freezed.dart` hashes must match a fresh `build_runner` (`regen-clean-after-diagnostics` skill).
 
 ---
 

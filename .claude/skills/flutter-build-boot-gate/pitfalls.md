@@ -30,11 +30,11 @@ test, not just the build.
 `flutter analyze` clean + mocked tests passing + ~54% line coverage shipped six
 launch-blockers. None of those gates built or booted the app. Never treat
 static green as a substitute for this gate. This is the meta-lesson the whole
-`BUILD_VERIFIED` state encodes.
+`INTEGRATION_SMOKE` state encodes.
 
 ## P6 — Forgetting to record evidence
 Even when the gate ran, not writing the build-log-tail + boot PASS into the
-phase's `## Build Verification` means the orchestrator can't confirm it and
+phase's `## Integration Smoke` means the orchestrator can't confirm it and
 will (correctly) refuse to advance. Recording is part of the gate, not
 optional.
 

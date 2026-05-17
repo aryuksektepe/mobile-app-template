@@ -1,7 +1,7 @@
 # Verification Checklist — Supabase RLS ↔ Client Contract
 
 Run before a backend-touching phase can pass `db-migration` /
-`security-reviewer` / `BUILD_VERIFIED`.
+`security-reviewer` / `INTEGRATION_SMOKE`.
 
 ## Server
 - [ ] Every client write path broken by this phase's restriction has a sanctioned RPC/Edge function

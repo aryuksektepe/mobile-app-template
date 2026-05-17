@@ -235,14 +235,18 @@ class UserProfile extends _$UserProfile {
 - Routes MUST live in `core/router/app_router.dart`.
 - Auth-guarded routes use a top-level `redirect` callback reading `authStateProvider`.
 - Deep links MUST be validated against an allowlist before routing — no raw URL params trusted.
+- `redirect` MUST be a pure function of router state — NO `ref.read(...).notifier` calls or `state =` provider mutation inside `redirect`/`build`/`initState`/`dispose` (cold-start deep-link crash class). Mutations belong in event handlers / `addPostFrameCallback`.
+- The **navigation skeleton is an explicit architecture artifact**, not implied by the route table: name the shell (`StatefulShellRoute`/bottom-nav/drawer) and, for EVERY user-facing PRD screen, the concrete reachable tap-path from app entry. A route that exists in the table but has no tap-path to it is an architecture defect (real incident: Profile + account-deletion routes defined but no UI element navigated to them → unreachable → store-rejection class). task-planner turns each into an `AC-REACH` acceptance criterion; qa-test-guide executes it; `INTEGRATION_SMOKE` gates it.
 
-Route table (initial; task-planner expands per phase):
-| Path | Screen | Auth required | Deep-linkable |
-|---|---|---|---|
-| `/` | SplashScreen | No | No |
-| `/onboarding` | OnboardingScreen | No | No |
-| `/auth/login` | LoginScreen | No | No |
-| `/home` | HomeScreen | Yes | Yes |
+Navigation skeleton (initial; task-planner expands per phase). Every row needs a non-empty "Reached by":
+| Path | Screen | Auth required | Deep-linkable | Reached by (tap-path from entry) |
+|---|---|---|---|---|
+| `/` | SplashScreen | No | No | app launch |
+| `/onboarding` | OnboardingScreen | No | No | first launch (no completion flag) |
+| `/auth/login` | LoginScreen | No | No | splash → unauthenticated redirect |
+| `/home` | HomeScreen | Yes | Yes | login success / authenticated launch |
+| `/profile` | ProfileScreen | Yes | No | Home → bottom-nav "Profil" tab |
+| `/profile/delete-account` | DeleteAccountScreen | Yes | No | Profile → "Hesabı sil" |
 
 ## §7. Data Layer Conventions
 

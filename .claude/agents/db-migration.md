@@ -150,12 +150,38 @@ test('upgrade v{N-1} → v{N} preserves user rows', () async {
 });
 ```
 
+### Stage 5.5: Real-Stack Apply Gate (NOT just "file written")
+
+A migration / Edge function that exists only as a file has NOT been verified.
+Backend work feeds the `INTEGRATION_SMOKE` gate (CLAUDE.md §3) — produce
+execution evidence, not artifacts:
+
+1. **Apply migrations to a real local stack** (`supabase db reset` / `supabase
+   migration up` / `dart run drift_dev` for Drift). Paste into the phase's
+   `## Integration Smoke` section: the applied-migration list AND the `\d
+   <table>` (or Drift schema dump) of every affected table. "Migration file
+   written" without an apply is BLOCK.
+2. **Every new/changed Edge Function:** serve it on the local stack and make
+   ≥1 real **authenticated** call (curl or integration test); paste status +
+   body. A 401/403/405/400 here is a phase-level finding, not a launch
+   surprise (real incidents: local `verify_jwt` ES256↔HS256 → all
+   authenticated fns 401; POST to a GET-only fn → feature dead in prod).
+3. **`supabase db reset` caveat:** it recreates `auth.users`; a device/test
+   session holding the old JWT then hits `23503` FK violations. Follow the
+   `LOCAL-STACK-RUNBOOK` (JWT alg ↔ `verify_jwt`, realtime publication,
+   post-reset app-data clear) — see skills `supabase-local-verify-jwt-es256-hs256`
+   and `supabase-rls-client-contract`.
+
+If the real-stack apply or the authenticated Edge call was not executed and
+pasted, verdict is **BLOCK** — the work is not done, it is declared.
+
 ### Stage 6: Verdict + Output
 
 | Findings | Verdict | Routing |
 |---|---|---|
-| Migration step + test scaffolded, all upgrade tests pass | **PASS** | advance |
-| Migration scaffolded but tests fail | **BLOCK** | bounce to coder with failing test output |
+| Migration applied to real local stack + Edge fns serve + authenticated 2xx + upgrade tests pass, evidence pasted | **PASS** | advance |
+| Migration/Edge only written, not applied/served against a real stack (no execution evidence) | **BLOCK** | bounce to coder: apply + call + paste evidence |
+| Migration scaffolded but tests fail OR an authenticated Edge call returns 4xx/5xx | **BLOCK** | bounce to coder with failing output |
 | Schema change detected but operation unsupported (e.g. complex transformation) | **NEEDS_DESIGN** | OPEN_QUESTION for coder + architect — discuss approach |
 
 To user:

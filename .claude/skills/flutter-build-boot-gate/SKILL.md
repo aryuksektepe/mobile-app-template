@@ -1,7 +1,7 @@
 ---
 name: flutter-build-boot-gate
 description: Compile + first-boot smoke gate. Use in phase-01 and in CI to prove the app actually builds and launches before any review/QA. Catches native/Gradle/Kotlin/desugaring/manifest + bootstrap runtime aborts that static analysis and mocked tests cannot.
-triggers: [build gate, boot smoke, does it run, flutter build apk, walking skeleton, app launches, integration_test boot, BUILD_VERIFIED, first frame assertion, splash lock]
+triggers: [build gate, boot smoke, does it run, flutter build apk, walking skeleton, app launches, integration_test boot, INTEGRATION_SMOKE, first frame assertion, splash lock]
 platforms: [ios, android]
 last_verified: 2026-05-16
 flutter_min: "3.19.0"
@@ -16,8 +16,9 @@ depends_on: []
 ## What this skill does
 
 - Adds a **compile** step (`flutter build apk --flavor <env> --debug`, iOS `--no-codesign`) that fails CI on native/Gradle/Kotlin/core-library-desugaring/manifest defects.
-- Adds an **automated boot smoke test** that drives the REAL flavored `main()` entrypoint, awaits first frame, and fails on ANY uncaught `FlutterError` during boot.
-- Wires both into CI as the `build-and-boot` / `build-ios` jobs that gate the `BUILD_VERIFIED` state.
+- Adds an **automated boot smoke test** that drives the REAL flavored `main()` entrypoint, awaits first frame, asserts a real first screen, and fails on ANY uncaught `FlutterError` or rebuild/dispose storm during boot.
+- Adds a **persistent CLI harness** `tool/smoke_boot.sh` that builds a flavor, boots it headless, and waits for a `BOOT_OK flavor=…` marker (≤60s) — installed once by app-bootstrap, reused by EVERY phase's `INTEGRATION_SMOKE` gate (which runs *before* `COMPLIANCE_CHECK`).
+- Wires both into CI as the `build-and-boot` / `build-ios` / `integration-smoke` jobs that gate the `INTEGRATION_SMOKE` state.
 
 ## What this skill does NOT do
 
@@ -52,17 +53,24 @@ These only appear at compile-time or app-boot. This gate is the cheapest possibl
 flutter build apk --flavor dev --debug --target lib/main_dev.dart
 flutter build ios --flavor dev --debug --no-codesign --target lib/main_dev.dart
 
-# 2. Boot smoke on an emulator/simulator
-flutter test integration_test/app_boot_test.dart
+# 2. Boot smoke: CLI harness (waits for BOOT_OK marker) + integration test
+tool/smoke_boot.sh dev
+flutter test integration_test/boot_smoke_test.dart
 ```
 
-CI: the `build-and-boot` (Android) + `build-ios` jobs in `.github/workflows/ci.yml`. They must be green before any phase enters `BUILD_VERIFIED`.
+Add `debugPrint('BOOT_OK flavor=<flavor>');` as the last line of each
+`main_<flavor>()` / shared `bootstrap()` so the harness can detect a real boot.
+
+CI: the `build-and-boot` (Android) + `build-ios` + `integration-smoke`
+(emulator matrix, merge-to-main) jobs in `.github/workflows/ci.yml`. They must
+be green for a phase to leave `INTEGRATION_SMOKE` → `COMPLIANCE_CHECK`.
 
 ## Code patterns
 
 | Need | File |
 |---|---|
-| Boot smoke test (drives real `main()`) | [snippets/app_boot_test.dart](snippets/app_boot_test.dart) |
+| Boot smoke test (drives real `main()`, storm guard) | [snippets/boot_smoke_test.dart](snippets/boot_smoke_test.dart) |
+| Persistent CLI harness (BOOT_OK marker, ≤60s) | [snippets/smoke_boot.sh](snippets/smoke_boot.sh) |
 | CI jobs (Android build+boot, iOS build) | [snippets/ci-build-boot.yml](snippets/ci-build-boot.yml) |
 
 Full step-by-step (flavor entrypoint wiring, emulator setup, what each compile failure means) → [implementation.md](implementation.md).
@@ -76,7 +84,7 @@ Full step-by-step (flavor entrypoint wiring, emulator setup, what each compile f
 
 ## Verification
 
-→ [checklist.md](checklist.md) (build per flavor, iOS no-codesign, boot test green on emulator, evidence recorded in phase `## Build Verification`).
+→ [checklist.md](checklist.md) (build per flavor, iOS no-codesign, boot test green on emulator, evidence recorded in phase `## Integration Smoke`).
 
 ## Skill metadata
 - Validation status: **pre-seeded** (written from a real post-mortem; adapt, don't apply blind)

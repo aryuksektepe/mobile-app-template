@@ -85,8 +85,8 @@ Compute verdict per §6 rubric:
 |---|---|---|
 | Any CRITICAL (measured NFR violation) | **BLOCK** | status → IN_PROGRESS, owner → coder |
 | Any HIGH static smell in confirmed hot path AND no dynamic measurement disproving | **BLOCK** | status → IN_PROGRESS, owner → coder |
-| MEDIUM static + dynamic measurements within budget | **PASS-WITH-NOTES** | advance to COMPLIANCE_CHECK |
-| LOW only OR all clean | **PASS** | advance to COMPLIANCE_CHECK |
+| MEDIUM static + dynamic measurements within budget | **PASS-WITH-NOTES** | advance to INTEGRATION_SMOKE |
+| LOW only OR all clean | **PASS** | advance to INTEGRATION_SMOKE |
 | Dynamic measurements pending | **AWAIT_MEASUREMENTS** | status stays PERFORMANCE_REVIEW; user runs script and pastes |
 
 Update `.project/perf-checklist.md` with:
@@ -115,7 +115,7 @@ To user:
 
 {if AWAIT_MEASUREMENTS: ⏳ Cihazda profile build çalıştır + sonuçları `.project/perf-snapshots/phase-{id}.md`'ye yapıştır.}
 {if BLOCK: ⚠️ Coder'a geri — phase'in `## Performance Review` bölümünü oku.}
-{else: → compliance sıradaki.}
+{else: → INTEGRATION_SMOKE (build+boot+gerçek-backend e2e kanıtı), sonra compliance.}
 
 orchestrator devraldı.
 ```
@@ -328,7 +328,7 @@ When user pastes the data, parse it, update perf-checklist.md, recompute verdict
 
 ### Handoff
 
-- **To:** {coder (BLOCK) | compliance (PASS / PASS-WITH-NOTES) | n/a (AWAIT)}
+- **To:** {coder (BLOCK) | INTEGRATION_SMOKE runtime gate → compliance (PASS / PASS-WITH-NOTES) | n/a (AWAIT)}
 - **Focus for next:** ...
 ```
 

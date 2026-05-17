@@ -4,7 +4,7 @@
 > Match yoksa: implement from scratch, slug'ı phase frontmatter'da `skills_to_extract:`'e ekle.
 
 **Last updated:** 2026-05-16
-**Total skills:** 15 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
+**Total skills:** 24 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
 
 > **Validation status legend:**
 > - `pre-seeded` — written from research, NOT yet validated in a real project. Treat as ADAPT not VERBATIM. Append findings to skill's pitfalls.md after first use.
@@ -56,6 +56,16 @@
 |---|---|---|---|---|---|
 | [`secure-storage-tokens`](secure-storage-tokens/SKILL.md) | flutter_secure_storage 10.x — Keychain (iOS) + Keystore (Android), biometric-protected, refresh-token mutex, fresh-install Keychain wipe, Dio interceptor | secure storage, flutter_secure_storage, keychain, keystore, biometric, refresh token, access token, jwt | ios, android | 2026-05-10 | pre-seeded |
 
+## Riverpod & Lifecycle
+
+> Class (A) from the launch-smoke post-mortem: lifecycle/stream bugs invisible to single-build mocked tests, only manifest in a running app. Pair with `flutter-build-boot-gate` (boot smoke catches the storm).
+
+| Slug | Purpose | Triggers | Platforms | Last Verified | Status |
+|---|---|---|---|---|---|
+| [`riverpod-2x-disposed-flag-guard`](riverpod-2x-disposed-flag-guard/SKILL.md) | A manual `bool _disposed`/`ref.onDispose` latch read in `build()` causes an infinite rebuild loop (onboarding never completes). Use `ref.mounted`, keep build() pure | riverpod disposed flag, _disposed latch, ref.onDispose rebuild, notifier reuse, onboarding infinite loop, rebuild loop, provider never settles | ios, android | 2026-05-16 | pre-seeded |
+| [`riverpod-autodispose-chain-churn`](riverpod-autodispose-chain-churn/SKILL.md) | Session/stream provider is autoDispose (or keepAlive watches autoDispose) → dispose/recreate per rebuild → ~30 req/s storm. keepAlive the right nodes; audit the chain | autoDispose churn, request storm, keepAlive, ref.watch keepAlive, re-subscribe loop, provider recreated every rebuild, currentUser not keepAlive | ios, android | 2026-05-16 | pre-seeded |
+| [`riverpod-fetch-then-subscribe-yield`](riverpod-fetch-then-subscribe-yield/SKILL.md) | `async*` provider awaits the initial fetch but never `yield`s it → empty UI until first realtime event / forever if realtime broken. yield snapshot then yield* updates | async* provider, stream provider, fetch then subscribe, yield* missing, await result discarded, realtime empty until event, StreamNotifier | ios, android | 2026-05-16 | pre-seeded |
+
 ## Compliance & Security
 
 > No standalone skill yet. KVKK/GDPR/MASVS controls live inside the relevant
@@ -83,19 +93,25 @@
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
 | [`deeplinks-go-router`](deeplinks-go-router/SKILL.md) | Universal Links + App Links + go_router 17.x — AASA + assetlinks hosting, multi-flavor SHA, sanitization, return-to. Firebase Dynamic Links DEAD as of Aug 25 2025 | deep link, deeplink, universal link, app link, go_router, app_links, aasa, assetlinks | ios, android | 2026-05-10 | pre-seeded |
+| [`gorouter-statefulshell-deeplink`](gorouter-statefulshell-deeplink/SKILL.md) | go_router + StatefulShellRoute deep-link/push wiring — pure redirect (no provider mutation → cold-start crash), branch-aware navigation (warm tab switch), cold+warm integration tests | go_router redirect crash, StatefulShellRoute deeplink, cold start deeplink, push tap routing, modified provider during build, branch not switching | ios, android | 2026-05-16 | pre-seeded |
 
 ## DevOps & CI/CD
 
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
 | [`firebase-core-setup`](firebase-core-setup/SKILL.md) | FlutterFire foundation — flutterfire_cli, multi-flavor (dev/stg/prod) Firebase projects, App Check (Play Integrity + DeviceCheck) | firebase, flutterfire, firebase init, firebase setup, firebase_core, flavor, app check, google-services.json, GoogleService-Info.plist | ios, android | 2026-05-10 | pre-seeded |
-| [`flutter-build-boot-gate`](flutter-build-boot-gate/SKILL.md) | Compile + first-boot smoke gate (phase-01 + CI) — proves the app actually builds and launches before any review/QA. Catches native/Gradle/Kotlin/desugaring/manifest + bootstrap runtime aborts static analysis and mocked tests cannot | build gate, boot smoke, does it run, flutter build apk, walking skeleton, app launches, integration_test boot, BUILD_VERIFIED, splash lock | ios, android | 2026-05-16 | pre-seeded |
+| [`flutter-build-boot-gate`](flutter-build-boot-gate/SKILL.md) | Compile + first-boot smoke gate (every phase + CI) — BOOT_OK marker harness; proves the app builds and launches before review/QA. Catches native/Gradle/Kotlin/desugaring/manifest + bootstrap runtime aborts static analysis and mocked tests cannot | build gate, boot smoke, does it run, flutter build apk, walking skeleton, app launches, integration_test boot, INTEGRATION_SMOKE, BOOT_OK, splash lock | ios, android | 2026-05-16 | pre-seeded |
+| [`regen-clean-after-diagnostics`](regen-clean-after-diagnostics/SKILL.md) | Keep the CI generated-clean gate green + meaningful — pre-push build_runner regen guard, deterministic generated artifacts, batch-push CI economy | generated diff fails CI, build_runner not clean, .g.dart drift, generated-clean gate, non-deterministic codegen, CI minute budget | ios, android | 2026-05-16 | pre-seeded |
 
 ## Backend & Data Contracts
 
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
 | [`supabase-rls-client-contract`](supabase-rls-client-contract/SKILL.md) | Every client DB write path must have a matching, integration-tested RLS/RPC path. SECURITY DEFINER own-row upsert pattern; closes the "server restriction breaks client write, RPC left as TODO" loop | supabase write, RLS policy, column guard, security definer, rpc, could not find the column, violates row-level security, profile upsert, onboarding write, db reset foreign key | ios, android | 2026-05-16 | pre-seeded |
+| [`supabase-read-through-cache-mirror`](supabase-read-through-cache-mirror/SKILL.md) | Repository read must fall through cache miss → remote → backfill mirror, else fresh users see "nothing here yet" forever | read-through cache, cache miss remote fallback, listX returns empty, no content yet, drift mirror, offline-first read | ios, android | 2026-05-16 | pre-seeded |
+| [`supabase-progress-aggregation-trigger`](supabase-progress-aggregation-trigger/SKILL.md) | Client appends events; a server-side writer (AFTER INSERT trigger / RPC / cron) MUST roll them into the summary the UI reads — shipped in the same migration, non-mock tested | progress_events, aggregation, rollup, streak zero, totals not updating, server-side writer, postgres trigger, derived summary | ios, android | 2026-05-16 | pre-seeded |
+| [`supabase-functions-client-contract-parity`](supabase-functions-client-contract-parity/SKILL.md) | Client↔Edge HTTP method + body field-name parity; forbids `any(named:'body')` boundary mocks. Fixes POST-vs-GET and `token` vs `otp_token` prod-dead bugs | functions.invoke, edge function contract, POST vs GET, otp_token, body field mismatch, req.method 405, client server contract | ios, android | 2026-05-16 | pre-seeded |
+| [`supabase-local-verify-jwt-es256-hs256`](supabase-local-verify-jwt-es256-hs256/SKILL.md) | LOCAL-STACK-RUNBOOK — fixes "all authenticated Edge fns 401 locally" (verify_jwt ES256↔HS256), db-reset FK trap, realtime publication, CORS-preflight | edge function 401, verify_jwt, ES256 HS256, local supabase 401, JWT algorithm mismatch, local stack runbook, realtime publication | ios, android | 2026-05-16 | pre-seeded |
 
 ---
 

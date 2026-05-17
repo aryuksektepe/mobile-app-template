@@ -1,5 +1,5 @@
 # Drop-in CI jobs for the build+boot gate. Keep in sync with the canonical
-# .github/workflows/ci.yml at the repo root. These gate BUILD_VERIFIED.
+# .github/workflows/ci.yml at the repo root. These gate INTEGRATION_SMOKE.
 build-and-boot:
   name: Build + Boot smoke (Android)
   runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ build-and-boot:
       with:
         api-level: 34
         arch: x86_64
-        script: flutter test integration_test/app_boot_test.dart
+        script: flutter test integration_test/boot_smoke_test.dart
 
 build-ios:
   name: Build (iOS, no codesign)

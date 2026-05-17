@@ -462,8 +462,8 @@ dart run flutter_launcher_icons --flavors dev,staging,prod
 `.github/workflows/ci.yml`. This MUST stay consistent with the template's
 canonical workflow (repo-root `.github/workflows/ci.yml`): a static `analyze-test`
 job PLUS the runtime gate jobs (`build-and-boot` Android, `build-ios`,
-`backend-integration`). The runtime jobs are what make `BUILD_VERIFIED`
-enforceable in CI (CLAUDE.md §3 + §9). Do NOT ship a CI that only runs
+`backend-integration`, `integration-smoke`). The runtime jobs are what make
+`INTEGRATION_SMOKE` enforceable in CI (CLAUDE.md §3 + §9). Do NOT ship a CI that only runs
 `analyze` + mocked `test` — that is the exact gap this template closes.
 
 ```yaml
@@ -574,17 +574,29 @@ flutter test
 + mocked `flutter test` structurally cannot see native/Gradle/Kotlin/desugaring/
 manifest defects or app-boot runtime aborts. You MUST additionally verify:
 
+Install the **persistent boot-smoke harness** from the `flutter-build-boot-gate`
+skill — it is reused by EVERY phase's `INTEGRATION_SMOKE` gate, not just
+phase 01. Copy + adapt:
+- `tool/smoke_boot.sh` (from `flutter-build-boot-gate/snippets/smoke_boot.sh`):
+  builds a flavor, starts a headless emulator/simulator, installs, waits for
+  the `BOOT_OK` marker (≤60s) or FAILs with the last 50 log lines.
+- `integration_test/boot_smoke_test.dart` (from the skill's snippet): drives
+  the real flavored `main()`, asserts `splash → first real screen` with no
+  uncaught exception and no rebuild/dispose storm.
+- Add to the end of each `main_<flavor>()` (or shared `bootstrap()`):
+  `debugPrint('BOOT_OK flavor=<flavor>');` as the boot marker.
+
+Then verify:
+
 1. **It compiles.** `flutter build apk --flavor dev --debug --target lib/main_dev.dart`
    exits 0 (catches core-library-desugaring gaps, Kotlin `languageVersion`
    conflicts, leftover `MainActivity` package-rename artifacts, missing
    notification drawables, invalid manifest merges).
-2. **It boots.** The boot smoke test passes on an emulator/device:
-   ```bash
-   flutter test integration_test/app_boot_test.dart
-   ```
-   This drives the real `main_dev.dart` entrypoint, awaits first frame, and
-   asserts NO uncaught exception + the first route renders a known widget
-   (catches e.g. a Riverpod scoped-provider missing its `dependencies`
+2. **It boots.** `tool/smoke_boot.sh dev` AND
+   `flutter test integration_test/boot_smoke_test.dart` pass on an
+   emulator/device: real `main_dev.dart` entrypoint, `BOOT_OK` marker seen,
+   `splash → first real screen`, NO uncaught exception, NO rebuild/dispose
+   storm (catches e.g. a Riverpod scoped-provider missing its `dependencies`
    declaration → first-frame assertion → splash lock).
 3. **It talks to its backend (if one is configured).** If architecture §2
    lists Supabase/Firebase, bring the local stack up and assert the app boots
@@ -592,12 +604,14 @@ manifest defects or app-boot runtime aborts. You MUST additionally verify:
    SQL, connection-scaffold gaps):
    ```bash
    supabase start   # or the firebase emulators:start equivalent
-   flutter test integration_test/app_boot_test.dart   # app pointed at local stack
+   flutter test integration_test/boot_smoke_test.dart   # app pointed at local stack
    ```
 
-Record the **build log tail (exit line) + boot-test PASS line + backend-boot
-result** in the phase file's `## Build Verification` section (this is the
-evidence the orchestrator gates `BUILD_VERIFIED` on — CLAUDE.md §3).
+Record the **build log tail (exit line) + `BOOT_OK`/first-screen line +
+backend-boot result** in the phase file's `## Integration Smoke` section
+(this is the evidence the orchestrator gates `INTEGRATION_SMOKE` on —
+CLAUDE.md §3; for phase 01 the e2e/Edge-call/tap-path criteria are minimal but
+the harness it installs is what later phases use).
 
 **If any static OR runtime step fails → HALT. app-bootstrap does NOT hand off.**
 Common failures:
@@ -651,7 +665,7 @@ Append a structured note before returning:
 - Firebase: {configured for dev / pending user / not used}
 - Manual steps remaining: {bullet list}
 - Verified green: flutter analyze, flutter test, codegen, flutter build apk (dev), boot smoke (emulator){, local-backend boot}
-- ## Build Verification recorded: build log tail (exit 0) + boot-test PASS{ + backend-boot PASS}
+- ## Integration Smoke recorded: build log tail (exit 0) + BOOT_OK/first-screen + boot-test PASS{ + backend-boot PASS}
 ```
 
 ---
@@ -666,7 +680,7 @@ Append a structured note before returning:
 - Use `flutter create` defaults that conflict with architecture (e.g. `--platforms=web` if arch says only ios+android).
 - Generate Firebase config without user explicitly running `flutterfire configure`.
 - Mark phase done if `flutter analyze`, `flutter test`, `flutter build apk --flavor dev --debug`, or the boot smoke test fails — halt instead. A static-only "green" is not green.
-- Hand off without recording the build log tail + boot-test result in the phase's `## Build Verification` section.
+- Hand off without recording the build log tail + `BOOT_OK`/first-screen + boot-test result in the phase's `## Integration Smoke` section.
 - Install global tools without telling the user (e.g. `dart pub global activate` requires user consent).
 - Run `flutter clean` (destructive).
 - Modify architecture.md, design-system.md, prd.md, or other phase files.

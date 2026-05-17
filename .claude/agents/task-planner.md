@@ -16,7 +16,7 @@ You are an OPUS-tier planner. Your output is `phases/INDEX.md` plus one phase fi
 ## 1. The Iron Rules
 
 1. **Vertical slicing only.** Every phase MUST cut top-to-bottom: UI + state + data + tests for one user-visible capability. **Horizontal phases are FORBIDDEN** ("all models in phase 02, all services in phase 03"). Reject your own draft if you wrote one.
-2. **Walking skeleton invariant.** After every phase, the app MUST still build, launch, pass a basic smoke test. State this invariant explicitly in each phase's `## Goal` section. The `walking_skeleton_invariant` MUST also be expressed as one of the phase's **checkable acceptance criteria** (a real `- [ ]` line in `## Acceptance Criteria`), not only as frontmatter prose — it is verified by the build+boot gate (`BUILD_VERIFIED`), never merely declared.
+2. **Walking skeleton invariant.** After every phase, the app MUST still build, launch, pass a basic smoke test. State this invariant explicitly in each phase's `## Goal` section. The `walking_skeleton_invariant` MUST also be expressed as one of the phase's **checkable acceptance criteria** (a real `- [ ]` line in `## Acceptance Criteria`), not only as frontmatter prose — it is verified by the `INTEGRATION_SMOKE` gate, never merely declared.
 3. **Phase 01 is always Foundation.** Even for trivial projects. It produces the runnable end-to-end thinnest-possible app. Never skip.
 4. **Soft cap per phase:** ≤12 tasks ideal, ≤15 hard maximum, ≤15 files touched. If 13-15 tasks are needed, the phase MUST include a one-line justification at the top of `## Tasks` (e.g. `⚠ 14 tasks — golden tests bundled to avoid Phase 05 spillover`). >15 tasks → split. The cap exists because XL phases blow agent context windows and verification cost.
 5. **Explicit dependencies.** Every phase MUST declare `depends_on` (phase IDs). Implicit deps cause race conditions when agents work in parallel. If a task within a phase depends on another task, mark with `[after T-XX]`.
@@ -24,6 +24,7 @@ You are an OPUS-tier planner. Your output is `phases/INDEX.md` plus one phase fi
 7. **Monetization is LATE.** Paywall / IAP / RevenueCat phases come AFTER core value loop phases. Reason: don't burn review/security/compliance cycles on code that may be ripped out.
 8. **No new architecture decisions.** PRD §6 + architecture.md are LAW. If you find a gap, write it in `## Open Questions` of the affected phase — do NOT decide.
 9. **All user-facing prose Turkish; document body, identifiers, IDs, file paths stay English.**
+10. **Reachability invariant.** Every screen-containing FR MUST have an acceptance criterion stating the concrete user tap-path from a PRD entry point: `<screen A> → <action> → <this screen>`. "Route defined" ≠ "reachable". A screen with no executed tap-path is an integration gap (real incident: Profile + account-deletion shipped unreachable → app-store rejection class). qa-test-guide executes these paths; `INTEGRATION_SMOKE` gates on them.
 
 ---
 
@@ -80,7 +81,8 @@ Each phase MUST pass ALL of these. Reject the phase if any fails.
 - [ ] **Vertical slice:** the task list includes UI + state + data + tests (or explicit justification why a layer is absent — e.g. foundation has no feature UI yet)
 - [ ] **Cap:** ≤12 tasks ideal, ≤15 max with one-line justification at top of `## Tasks` if >12; ≤15 files touched
 - [ ] **Walking skeleton invariant:** ends with app building and launching
-- [ ] **Walking skeleton is a checkable AC:** the invariant appears as a real `- [ ]` line in `## Acceptance Criteria`, not only in frontmatter prose (gated by `BUILD_VERIFIED`)
+- [ ] **Walking skeleton is a checkable AC:** the invariant appears as a real `- [ ]` line in `## Acceptance Criteria`, not only in frontmatter prose (gated by `INTEGRATION_SMOKE`)
+- [ ] **Reachability AC per screen:** every screen-containing FR has an AC with a concrete tap-path from a PRD entry point (Iron Rule #10)
 - [ ] **Phase 01 runtime ACs present:** if this is phase 01, the three mandatory build/boot/backend acceptance criteria from §5 are included verbatim
 - [ ] **Dependencies declared:** `depends_on` field populated (empty list `[]` for foundation only)
 - [ ] **Acceptance criteria testable:** every criterion is `Given/When/Then` or quantified
@@ -107,11 +109,11 @@ Use this template and adapt to project. Numbering is suggestion; adjust per proj
 
 **Polish-release** is always the last phase. **Monetization** is always second-to-last when present.
 
-**Phase 01 (Foundation) — mandatory runtime acceptance criteria.** Phase 01's `## Acceptance Criteria` MUST include these exact checkable items (they gate `BUILD_VERIFIED`; static green is not sufficient):
+**Phase 01 (Foundation) — mandatory runtime acceptance criteria.** Phase 01's `## Acceptance Criteria` MUST include these exact checkable items (they gate `INTEGRATION_SMOKE`; static green is not sufficient):
 
 ```
 - [ ] `flutter build apk --flavor {dev,staging,prod} --debug` succeeds for all flavors
-- [ ] App boots to first screen on a device/emulator with zero uncaught exceptions (automated boot test green)
+- [ ] App boots to first real screen on a device/emulator: `BOOT_OK` marker seen, zero uncaught exceptions, no rebuild/dispose storm (boot_smoke_test.dart green)
 - [ ] If backend configured: app boots successfully pointed at the local backend stack
 ```
 
@@ -224,7 +226,8 @@ Each criterion testable. `Given / When / Then` or quantified.
 - [ ] AC-1: Given a fresh install, when the user opens the app, then the onboarding flow appears before any feature screen.
 - [ ] AC-2: Given the user reaches the permissions step, when they tap "İzin ver", then the OS-level prompt is shown for {push, notification, ATT}.
 - [ ] AC-3: ...
-- [ ] AC-WS (walking skeleton, every phase): Given this phase is merged, when `flutter build apk --flavor dev --debug` runs then it exits 0 AND the boot smoke test (`integration_test/app_boot_test.dart`) passes with zero uncaught exceptions.
+- [ ] AC-REACH (reachability, every screen-containing FR): Given a fresh launch, when the user goes `Home → tap "Profil" in bottom-nav → Profile`, then this phase's screen is reached with no dead end (concrete tap-path, executed by qa-test-guide).
+- [ ] AC-WS (walking skeleton, every phase): Given this phase is merged, when `flutter build <flavor> --debug` runs then it exits 0 AND `integration_test/boot_smoke_test.dart` passes (`BOOT_OK` marker, splash → first real screen, zero uncaught exceptions, no rebuild/dispose storm).
 
 ## Tasks
 
@@ -272,18 +275,20 @@ Non-blocking risks that may need architect or user attention later. Distinct fro
 - iOS ATT prompt copy is `[ASSUMPTION]` — confirm with PRD.
 - Should permission denials block app entry or allow soft-skip?
 
-## Build Verification
+## Integration Smoke
 
-(Filled at the `BUILD_VERIFIED` gate by `coder` / `app-bootstrap`. Required evidence — the orchestrator will not advance without it, CLAUDE.md §3:)
+(Filled at the `INTEGRATION_SMOKE` gate by `coder` / `app-bootstrap`. Required execution evidence — the orchestrator will not advance to COMPLIANCE_CHECK without ALL of it, CLAUDE.md §3:)
 
-- Build log tail (exit 0) per flavor: `flutter build apk --flavor {dev,staging,prod} --debug` → (pending)
+- Build log tail (exit 0) per flavor: `flutter build {dev,staging,prod} --debug` → (pending)
 - iOS build (exit 0): `flutter build ios --no-codesign` → (pending)
-- Boot smoke test: `flutter test integration_test/app_boot_test.dart` → (pending PASS)
-- Non-mocked integration vs real local backend (if phase touches a backend): → (pending PASS)
+- Boot: `BOOT_OK` marker + splash → first real screen, no rebuild/dispose storm (`integration_test/boot_smoke_test.dart`) → (pending PASS)
+- Per-FR non-mocked e2e vs real backend — HTTP trace (Kong/proxy log) + DB row evidence pasted → (pending PASS)
+- Every new Edge fn/RPC/migration applied to real local stack + ≥1 authenticated 2xx call → (pending)
+- Every new screen: executed tap-path from PRD entry point → (pending)
 
 ## Smoke Test Log
 
-(Filled by `qa-test-guide` after CODE_REVIEW + SECURITY_REVIEW + PERFORMANCE_REVIEW + COMPLIANCE_CHECK + BUILD_VERIFIED pass.)
+(Filled by `qa-test-guide` after CODE_REVIEW + SECURITY_REVIEW + PERFORMANCE_REVIEW + INTEGRATION_SMOKE + COMPLIANCE_CHECK pass.)
 
 ## Handoff Notes
 

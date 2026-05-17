@@ -130,6 +130,12 @@ orchestrator devraldı.
 - Deep link handler accepting URL without parsing through validator
 - Hardcoded URL outside `EnvConfig` (any `https://` or `http://` literal in `lib/`)
 - Logging containing `token`, `password`, `Authorization`, `Bearer`, full request/response bodies
+- **Riverpod lifecycle (auto-HIGH → bug-hunter):**
+  - `ref.onDispose(...)` paired with a `bool _disposed` / flag latch that guards rebuild (Notifier reuse + per-rebuild `onDispose` → infinite loop; ADR-024)
+  - Provider mutation inside `redirect` / `build` / `initState` / `dispose`: `ref.read(...).notifier`, `.state =`, `ref.invalidate(...)` (cold-start deep-link "modified provider during build" crash; ADR-033)
+  - A `keepAlive` provider `ref.watch`-ing a NON-`keepAlive`/autoDispose provider (autoDispose chain churn / rebuild storm; ADR-022/025/026)
+- **Client↔backend contract (auto-HIGH):** a `functions.invoke('<fn>', body: {...})` whose sent keys or HTTP method do not match the Edge fn's destructure / `req.method` (grep `supabase/functions/<fn>/index.ts` for `const { … } = …` and the method guard; ADR-032/035)
+- **`async*` yield contract (auto-HIGH):** an `async*` provider where `await repo.x()` is assigned to a variable that is never `yield`ed (fetch result silently dropped; ADR-029)
 
 ### MEDIUM triggers (any one, none of HIGH)
 

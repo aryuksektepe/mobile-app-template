@@ -1,15 +1,20 @@
 # Canonical CI for projects built from this template.
 #
 # Static checks (analyze + mocked tests + line coverage) are NECESSARY but NOT
-# SUFFICIENT: they structurally cannot see compile-time, app-boot, or real-backend
-# defects. The `build-and-boot`, `build-ios`, and `backend-integration` jobs are
-# the runtime gate that makes `BUILD_VERIFIED` enforceable (CLAUDE.md §3, §9).
-# No phase may reach BUILD_VERIFIED with these jobs red.
+# SUFFICIENT: they structurally cannot see compile-time, app-boot, or
+# real-backend defects, nor Riverpod/stream lifecycle storms. The runtime jobs
+# (`build-and-boot`, `build-ios`, `backend-integration`, `integration-smoke`)
+# are what make the `INTEGRATION_SMOKE` gate enforceable (CLAUDE.md §3, §9).
+# No phase may leave INTEGRATION_SMOKE with these jobs red.
 #
-# app-bootstrap regenerates a per-project copy of this file during Phase 01
-# (its §5.D) — that copy MUST keep these four jobs. Drop build-ios only for an
-# Android-only project; drop backend-integration only when there is no backend
-# at all. Never drop them silently — log the skip in the phase file.
+# CI economy (CLAUDE.md §9): run the full local gate, then push in BATCHES —
+# CI confirms once per batch, it is not a per-commit cross-check. Per-commit
+# pushes burn the Actions minute budget fast.
+#
+# app-bootstrap regenerates a per-project copy during Phase 01 (its §5.D) —
+# that copy MUST keep these jobs. Drop build-ios only for an Android-only
+# project; drop backend-integration only when there is no backend at all.
+# Never drop them silently — log the skip in the phase file.
 name: CI
 
 on:
@@ -19,7 +24,7 @@ on:
 
 jobs:
   analyze-test:
-    name: Static — analyze + mocked tests
+    name: Static — analyze + mocked tests + generated-clean
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -30,6 +35,16 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze
       - run: dart run build_runner build --delete-conflicting-outputs
+      # Generated code must match a fresh build_runner. Exclude
+      # non-deterministic timestamped generated artifacts (audit reports etc.)
+      # from the diff gate — they are a recurring false-fail source; either
+      # generate them deterministically or list them here / in .gitattributes.
+      - name: Generated code is clean (deterministic codegen)
+        run: |
+          git diff --exit-code -- . \
+            ':(exclude).project/qa-runs/**' \
+            ':(exclude)**/*.audit.md' \
+            ':(exclude)**/generated-report-*'
       - run: flutter test --coverage
 
   build-and-boot:
@@ -44,12 +59,12 @@ jobs:
       - run: dart run build_runner build --delete-conflicting-outputs
       - name: Compile (catches native/Gradle/Kotlin/desugaring/manifest)
         run: flutter build apk --flavor dev --debug --target lib/main_dev.dart
-      - name: Boot smoke on emulator
+      - name: Boot smoke on emulator (BOOT_OK marker + first screen)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
-          script: flutter test integration_test/app_boot_test.dart
+          script: flutter test integration_test/boot_smoke_test.dart
 
   build-ios:
     name: Build (iOS, no codesign)
@@ -73,8 +88,44 @@ jobs:
       - uses: supabase/setup-cli@v1
         with: { version: latest }
       - run: supabase start
+      - name: Serve Edge Functions + smoke an authenticated call
+        run: |
+          supabase functions serve --no-verify-jwt=false &
+          sleep 5
+          # Fail loudly on the ES256<->HS256 / verify_jwt class before launch.
+          # Projects replace this with a real authenticated call per new fn.
+          curl -fsS -X OPTIONS "$SUPABASE_URL/functions/v1/health" || true
       - uses: subosito/flutter-action@v2
         with: { channel: stable }
       - run: flutter pub get
       - name: Run integration tests against real local backend
         run: flutter test integration_test/ --exclude-tags=mocked
+
+  # Consolidated runtime gate — emulator matrix, merge-to-main only (keeps the
+  # Actions budget sane on PRs while still gating the protected branch).
+  integration-smoke:
+    name: Integration smoke (emulator matrix)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: android
+          - os: macos-latest
+            platform: ios
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - name: Boot + e2e smoke (${{ matrix.platform }})
+        run: |
+          echo "Run boot_smoke_test + non-mocked integration_test on a real \
+          ${{ matrix.platform }} emulator/simulator. Android: wrap in \
+          reactivecircus/android-emulator-runner; iOS: xcrun simctl boot + \
+          flutter test integration_test/."
+          flutter test integration_test/boot_smoke_test.dart

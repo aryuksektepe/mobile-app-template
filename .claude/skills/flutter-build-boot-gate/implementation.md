@@ -2,7 +2,7 @@
 
 ## Step 1 — Add the boot smoke test
 
-Copy `snippets/app_boot_test.dart` to `integration_test/app_boot_test.dart`.
+Copy `snippets/boot_smoke_test.dart` to `integration_test/boot_smoke_test.dart`.
 Adapt two things:
 
 1. `import 'package:<APP_PACKAGE>/main_dev.dart' as app;` → real package name
@@ -40,7 +40,7 @@ What a failure here usually means:
 ## Step 3 — Boot on an emulator
 
 Locally: start any emulator/simulator, then
-`flutter test integration_test/app_boot_test.dart`.
+`flutter test integration_test/boot_smoke_test.dart`.
 
 CI: use the jobs in `snippets/ci-build-boot.yml` (mirrored in the repo-root
 `.github/workflows/ci.yml`). The Android job uses
@@ -49,8 +49,8 @@ CI: use the jobs in `snippets/ci-build-boot.yml` (mirrored in the repo-root
 ## Step 4 — Record evidence
 
 Write the build log tail (the `exit 0` / `✓ Built …` line per flavor) and the
-boot-test PASS line into the phase file's `## Build Verification` section. The
-orchestrator gates `BUILD_VERIFIED` on this evidence existing (CLAUDE.md §3);
+boot-test PASS line into the phase file's `## Integration Smoke` section. The
+orchestrator gates `INTEGRATION_SMOKE` on this evidence existing (CLAUDE.md §3);
 no evidence → it routes back to coder/app-bootstrap, never advances.
 
 ## Step 5 — Keep it the floor, not the ceiling

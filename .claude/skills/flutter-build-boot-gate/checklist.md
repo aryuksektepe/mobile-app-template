@@ -1,6 +1,6 @@
 # Verification Checklist — Flutter Build + Boot Gate
 
-Run before claiming a phase can enter `BUILD_VERIFIED`.
+Run before claiming a phase can enter `INTEGRATION_SMOKE`.
 
 ## Compile
 - [ ] `flutter build apk --flavor dev --debug --target lib/main_dev.dart` exits 0
@@ -9,10 +9,13 @@ Run before claiming a phase can enter `BUILD_VERIFIED`.
 - [ ] `flutter build ios --flavor dev --debug --no-codesign` exits 0 (unless Android-only project — log the skip)
 
 ## Boot
-- [ ] `integration_test/app_boot_test.dart` exists and drives the REAL flavored `main()` (not `App()` directly)
+- [ ] `integration_test/boot_smoke_test.dart` exists and drives the REAL flavored `main()` (not `App()` directly)
+- [ ] `tool/smoke_boot.sh` installed; each `main_<flavor>()`/`bootstrap()` emits `debugPrint('BOOT_OK flavor=…')` as its last line
+- [ ] `tool/smoke_boot.sh <flavor>` sees `BOOT_OK` within timeout
 - [ ] Boot test asserts NO uncaught `FlutterError` via `FlutterError.onError` capture
-- [ ] Boot test asserts a known first-screen widget renders (not just "no exception")
-- [ ] Boot test passes on an emulator/simulator (locally AND in the `build-and-boot` CI job)
+- [ ] Boot test asserts a known first-screen widget renders (not just "no exception"); a settled splash that never navigates FAILS
+- [ ] Boot test asserts no rebuild/dispose storm (bounded build count) where a debug counter exists
+- [ ] Boot passes on an emulator/simulator (locally AND in `build-and-boot` + `integration-smoke` CI jobs)
 
 ## CI
 - [ ] `.github/workflows/ci.yml` has `build-and-boot` + `build-ios` jobs
@@ -20,6 +23,6 @@ Run before claiming a phase can enter `BUILD_VERIFIED`.
 - [ ] `analyze-test` (static) is also green — but is NOT accepted as a substitute
 
 ## Evidence
-- [ ] Build log tail (exit 0 line per flavor) recorded in phase `## Build Verification`
-- [ ] Boot-test PASS line recorded in phase `## Build Verification`
+- [ ] Build log tail (exit 0 line per flavor) recorded in phase `## Integration Smoke`
+- [ ] Boot-test PASS line recorded in phase `## Integration Smoke`
 - [ ] If the phase touches a backend: the non-mocked `backend-integration` result is also recorded (see `supabase-rls-client-contract`)

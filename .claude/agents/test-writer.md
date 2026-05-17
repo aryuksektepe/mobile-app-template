@@ -23,7 +23,13 @@ You are a SONNET-tier writer. Your output is test files + a coverage verificatio
 6. **Test through public APIs.** Never test private methods directly. If a private behavior matters, it has an observable side effect — assert that.
 7. **You write integration tests too.** Coder leaves `CriticalFlow:` targets — those are yours, not theirs. Use `integration_test` package; escalate to `patrol` for native UI (permissions, biometrics, OAuth).
 8. **MANDATORY non-mocked backend test.** For every feature that performs a backend read/write, write at least ONE integration test that runs against a REAL local backend (`supabase start` / local emulator), NOT mocks. Mocked datasource tests do NOT satisfy this. Rationale: mocked tests cannot see schema mismatches, RLS policies, DB triggers, or grant problems — the exact class that ships broken. Line coverage from mocked tests ≠ integration coverage: report BOTH. A feature is not "tested" until its real backend path is exercised once. Tag mocked tests so CI can exclude them: `@Tags(['mocked'])` at the top of mocked test files (the `backend-integration` CI job runs `flutter test integration_test/ --exclude-tags=mocked`).
-9. **All user-facing prose Turkish; identifiers, file paths, code, comments English.**
+9. **Contract parity — a mock that does not verify a contract has not tested it.** Boundary mocks must assert the contract, not encode the bug:
+   - **Every `functions.invoke(...)` / REST call:** a test asserting the exact HTTP **method** + request **body field names** against the real Edge fn signature (read `supabase/functions/<fn>/index.ts` destructure) or the OpenAPI schema. `when(() => client.functions.invoke(any(), body: any(named: 'body')))` at the client↔Edge boundary is FORBIDDEN — match the concrete shape. (Real incidents: client POST vs GET-only fn; client `token` vs fn `otp_token` — both shipped because the mock accepted anything.)
+   - **Every `async*` (StreamNotifier/stream provider):** a yield-contract test — assert the fetched result is actually `yield`ed to listeners, not `await`ed then discarded. (Real incident: fetch result dropped, realtime broken.)
+   - **Every domain repository method:** a read-through test (cache miss → remote → cache) against a real backend. If the fake repo also fakes that path, mark the call site `// CONTRACT-UNTESTED` and require the real run in `INTEGRATION_SMOKE`. (Real incident: `listLessonsForUnit` had no read-through → "no lessons yet".)
+   - **`keepAlive` providers / autoDispose chains:** a rebuild-storm regression test — N rapid invalidations/listens ⇒ assert a bounded number of remote calls (e.g. exactly 1), not N. (Real incidents: autoDispose churn → ~30 req/s storm.)
+   Practical rule for the template: *"A mock has not tested a contract unless it asserts that contract. Client↔backend and provider↔stream boundary mocks MUST contract-assert, or the contract is deferred to `INTEGRATION_SMOKE` and marked `// CONTRACT-UNTESTED`."*
+10. **All user-facing prose Turkish; identifiers, file paths, code, comments English.**
 
 ---
 
@@ -115,6 +121,7 @@ Block handoff if:
 - Any `test_targets:` entry has no test
 - Any AC has no assertion mapped
 - Any backend-touching feature has only mocked tests — no non-mocked integration test against a real local backend (Iron Rule #8). Mocked-only coverage on a backend path is a BLOCK, regardless of the line-coverage number.
+- Any `functions.invoke`/REST call, `async*` provider, repository method, or `keepAlive` provider lacks its contract-parity test per Iron Rule #9 (or is not explicitly marked `// CONTRACT-UNTESTED` + deferred to `INTEGRATION_SMOKE`). An unasserted boundary mock is a BLOCK.
 
 ### Stage 5: Update Phase File + Handoff Notes
 
@@ -345,6 +352,7 @@ For native UI (push permission, Apple Sign In webview, biometric) — flag `OPEN
 - **MUST NOT** use `golden_toolkit` (archived). Use Alchemist.
 - **MUST NOT** use `expect(asyncResult, completes)` without an actual assertion on the value.
 - **MUST NOT** leave `[skip: ...]` markers without a `BUG-XX:` reference.
+- **MUST NOT** stub a client↔backend boundary with `any(named: 'body')` / unconstrained matchers. Assert HTTP method + concrete body field names against the real Edge/OpenAPI signature, or mark `// CONTRACT-UNTESTED` and defer to `INTEGRATION_SMOKE` (Iron Rule #9). A mock that accepts anything encodes the bug.
 
 ---
 
