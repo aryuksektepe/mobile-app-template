@@ -11,13 +11,24 @@ Any provider mutation inside `redirect` is the ADR-033 crash. Move it out:
 - Side-effects → an event handler, a `ref.listen` at app root, or
   `WidgetsBinding.instance.addPostFrameCallback`.
 
-## 2. Branch-aware deep links
-For a deep link targeting a tab inside `StatefulShellRoute.indexedStack`:
-- Route the path UNDER the correct branch so the shell selects it, OR
-- in a handler call `StatefulNavigationShell.goBranch(targetIndex)` then
-  navigate within it.
-A bare `context.go('/deeptab/x')` that isn't under the branch leaves the
-shell on the old tab (ADR-034).
+## 2. Branch-aware deep links (the reliable way)
+For a deep link targeting a tab inside `StatefulShellRoute.indexedStack`,
+a redirect/ancestor `GoRouter.go` to the branch location does NOT switch the
+`IndexedStack` (P6). The reliable path:
+- Capture the `StatefulNavigationShell` from `StatefulShellRoute.builder` into a
+  **process-global holder** (`ShellBranchController`, NOT a provider — reading
+  it is never "ref during build").
+- Switch with the SAME call the nav-bar makes:
+  `shell.goBranch(idx, initialLocation: idx == shell.currentIndex)` (P7).
+- A push/cold-start handler only **parks** the target in a Riverpod slot; a
+  `_DeepLinkNavigator` mounted in `MaterialApp.router`'s `builder:` (outside
+  redirect, outside the shell) consumes it.
+- Cold start: the shell may not be mounted yet → re-arm via post-frame,
+  **bounded**; when the cap is hit, clear the slot unconditionally (P8).
+- `ref.listen` guard is `next != null`, never `next != previous` (P9).
+See [snippets/shell_branch_controller.dart](snippets/shell_branch_controller.dart).
+A bare `context.go('/deeptab/x')` not under the branch leaves the shell on the
+old tab (ADR-034 / P6).
 
 ## 3. Cold vs warm
 - Cold: the deep link is `initialLocation`. Resolve auth/onboarding purely;

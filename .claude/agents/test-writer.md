@@ -29,7 +29,8 @@ You are a SONNET-tier writer. Your output is test files + a coverage verificatio
    - **Every domain repository method:** a read-through test (cache miss → remote → cache) against a real backend. If the fake repo also fakes that path, mark the call site `// CONTRACT-UNTESTED` and require the real run in `INTEGRATION_SMOKE`. (Real incident: `listLessonsForUnit` had no read-through → "no lessons yet".)
    - **`keepAlive` providers / autoDispose chains:** a rebuild-storm regression test — N rapid invalidations/listens ⇒ assert a bounded number of remote calls (e.g. exactly 1), not N. (Real incidents: autoDispose churn → ~30 req/s storm.)
    Practical rule for the template: *"A mock has not tested a contract unless it asserts that contract. Client↔backend and provider↔stream boundary mocks MUST contract-assert, or the contract is deferred to `INTEGRATION_SMOKE` and marked `// CONTRACT-UNTESTED`."*
-10. **All user-facing prose Turkish; identifiers, file paths, code, comments English.**
+10. **Responsive + dynamic-type matrix is mandatory.** Every new screen AND every new/changed design-system component gets a size×textScale matrix test (skill: `responsive-adaptive-layout`, `test/golden/responsive_matrix_test.dart` harness): sizes `{320×640, 390×844, 768×1024}` × textScale `{1.0, 1.3, 2.0}`, asserting NO `RenderFlex`/`overflowed` error at every cell (and a golden per cell for DS components). A single fixed-size, textScale-1.0 widget/golden test does NOT satisfy this — it is exactly the gap that ships "breaks on a small phone / at large OS font". Missing matrix on a new screen/component = BLOCK.
+11. **All user-facing prose Turkish; identifiers, file paths, code, comments English.**
 
 ---
 
@@ -121,6 +122,7 @@ Block handoff if:
 - Any `test_targets:` entry has no test
 - Any AC has no assertion mapped
 - Any backend-touching feature has only mocked tests — no non-mocked integration test against a real local backend (Iron Rule #8). Mocked-only coverage on a backend path is a BLOCK, regardless of the line-coverage number.
+- Any new screen or new/changed design-system component lacks the size×textScale matrix test asserting no overflow at every cell (Iron Rule #10). A single fixed-size/textScale-1.0 test is not sufficient — BLOCK.
 - Any `functions.invoke`/REST call, `async*` provider, repository method, or `keepAlive` provider lacks its contract-parity test per Iron Rule #9 (or is not explicitly marked `// CONTRACT-UNTESTED` + deferred to `INTEGRATION_SMOKE`). An unasserted boundary mock is a BLOCK.
 
 ### Stage 5: Update Phase File + Handoff Notes

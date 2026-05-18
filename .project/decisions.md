@@ -79,4 +79,70 @@ Concrete changes (on top of ADR-002):
 
 ---
 
+## ADR-004 — Responsive + dynamic-type as a wired pipeline concern
+**Date:** 2026-05-17
+**Status:** Accepted
+**Decision:** Add the `responsive-adaptive-layout` skill and wire enforcement into existing gates (no new agent). Best practice (Flutter docs adaptive/responsive + Material 3 window size classes + `MediaQuery.withClampedTextScaling`): layout from `MediaQuery.sizeOf`/`LayoutBuilder` against M3 window size classes (Compact <600 / Medium 600–840 / Expanded >840); never `OrientationBuilder`/`isTablet()`/fixed sizes for layout; OS text scaling respected and root-clamped (`1.0–1.3` default), never disabled; verified by a size×textScale golden matrix ({320×640,390×844,768×1024} × {1.0,1.3,2.0}) asserting no overflow.
+
+Concrete changes:
+- New full-dir skill `responsive-adaptive-layout` (SKILL + implementation + pitfalls + checklist + 4 snippets); `INDEX.md` 24→25, section renamed "Forms, UI & Layout".
+- `ux-designer.md`: Iron Rule #5 strengthened; design-system.md gains §22 (breakpoint contract + text-scale budget); layouts.md requires a per-screen Responsive field (structure now "22 Sections").
+- `architect.md` §14: M3 window size classes + root text-scale clamp are explicit mandatory decisions; single `core/responsive/breakpoints.dart` authority.
+- `app-bootstrap.md`: scaffolds the root clamp in `app.dart`, `core/responsive/breakpoints.dart`, and `test/golden/responsive_matrix_test.dart`; also reconciled stale `app_boot_test.dart` → `boot_smoke_test.dart`.
+- `code-reviewer.md`: responsive/text-scale anti-patterns are MEDIUM triggers (HIGH if scaling disabled or on critical screen).
+- `test-writer.md`: Iron Rule #10 — size×textScale matrix mandatory for every new screen/DS component; missing = BLOCK.
+- `qa-test-guide.md`: `device_variance`/`accessibility` categories now require a real-device size×OS-font matrix; mandatory when UI changes.
+- `CLAUDE.md` §9: new "Responsive & accessible text" bar + an `INTEGRATION_SMOKE` extreme-cell (smallest device + max text scale, zero overflow) evidence line.
+
+**Reason:** Reported empirical gap: apps break (RenderFlex overflow / clipped UI) on different phone sizes and when the OS font/display size is increased. Same meta-cause as ADR-002/003 — a single fixed-size, textScale-1.0 widget/golden test is green while the running app on a small phone or at "Largest" font shatters. The fix is the reusable how-to (skill) PLUS enforcement at design, review, test, QA, and the runtime gate.
+
+**Consequences:**
+- Every UI phase now carries a size×textScale matrix test and a real-device matrix QA scenario; design-system.md must declare the breakpoint + text-scale budget up front.
+- Text scaling can never be disabled to "fix" overflow — it must be clamped and the design proven at the clamp max.
+- Pre-seeded skill (not via skill-extractor), consistent with prior seeding.
+
+---
+
+## ADR-005 — Behavioral discipline + plugin packaging (Karpathy-derived)
+**Date:** 2026-05-17
+**Status:** Accepted
+**Decision:** Adopt, adapted to this pipeline, the four LLM-coding-discipline principles from `multica-ai/andrej-karpathy-skills` (MIT) and the Claude Code plugin-packaging pattern:
+- `CLAUDE.md` §14 **Behavioral Discipline** (Think Before Coding / Simplicity First / Surgical Changes / Goal-Driven Execution) — binding on every agent every turn; cross-references §3/§8/§9 instead of duplicating them. Subagents read CLAUDE.md (not the harness prompt), so this closes a real gap.
+- `code-reviewer.md`: MEDIUM trigger group for behavioral violations (drive-by refactor, style drift, speculative abstraction/bloat, deleting pre-existing dead code unasked, task with no verifiable criterion).
+- `coder.md`: Iron Rule #8 = simplicity/surgical/goal-driven (Turkish rule → #9).
+- `orchestrator.md`: Task dispatch MUST carry the step's verifiable success criterion; no vague "improve/fix X" directives; points agents to §14.
+- New `.claude-plugin/plugin.json` + `marketplace.json`: packages the pipeline (24 agents, 7 commands, hooks, 25 skills) as an installable Claude Code plugin/marketplace — directly serves CLAUDE.md §1 "reusable work so future projects benefit".
+
+NOT adopted (Simplicity First applied to ourselves): no duplicate 26th skill restating the principles (would mirror the system prompt + §14), and `EXAMPLES.md`/Cursor/zh variants not imported (generic/Python; our per-skill `pitfalls.md` already carry Flutter-specific examples). The reusable diff-discipline was abstracted into the code-reviewer rubric instead.
+
+**Reason:** Runtime gates (ADR-002/003/004) catch "never ran it / contract drift / breaks on other sizes". They do not catch "assumed wrong silently / overcomplicated / drive-by refactor / no success criterion" — the Karpathy failure class. These are behavioral, cross-agent, and best encoded in the constitution every dispatched agent reads. Plugin packaging makes the whole pipeline portable across projects.
+
+**Consequences:**
+- code-reviewer now bounces overcomplication/drive-by edits; expect tighter, request-traceable diffs.
+- orchestrator dispatches become goal-explicit (per-task echo of the INTEGRATION_SMOKE evidence philosophy).
+- The repo is now installable as a Claude Code plugin; keep `plugin.json` `skills` list in sync when skills are added/removed (skill-extractor / INDEX updates).
+- Attribution: principles derived from Andrej Karpathy's observations via `multica-ai/andrej-karpathy-skills` (MIT).
+
+---
+
+## ADR-006 — Deep-link/StatefulShell/cold-start lessons from a real production run (Mimirva)
+**Date:** 2026-05-18
+**Status:** Accepted
+**Decision:** Fold the lessons from a real production deep-link/push campaign (Mimirva — 6-round bug-loop, ~hours each) into the template, generalized + project-agnostic:
+- **Enriched** the existing `gorouter-statefulshell-deeplink` skill instead of creating the briefed near-duplicate `gorouter-statefulshell-deeplink-goBranch` (user-approved; Simplicity First + ADR-005). Added: third rule (process-global shell holder + `goBranch(idx, initialLocation: idx==currentIndex)` + bounded cold-start handshake + consume-outside-redirect), new snippet `shell_branch_controller.dart`, pitfalls P6–P10, generalized bug-catalog table, checklist items, fixed the broken pseudo-line in `shell_deeplink.dart`. `recurrence_count` → 1, `last_verified` → 2026-05-18. INDEX count stays 25.
+- **`deeplinks-go-router`** pitfalls #17–#21: custom-scheme `-10814` / `CFBundleURLTypes`, `MaterialApp(home:)`+nested-Router black screen, `app_links` `#if DEBUG` cold-start sim trap (Flutter #149214), goBranch cross-ref, `!identical` vs value-`!=` guard. `last_verified` bumped.
+- **`notifications-fcm`** pitfalls #15–#16: notification-tap → non-Home tab needs the shell pattern; push-route allowlist must run BEFORE `setPath`. `last_verified` bumped.
+- **`CLAUDE.md` §13** new "Debugging discipline (when a bug fights back)" block: research-before-fix + instrument-don't-speculate + deterministic-test-over-device (incl. "mocked StatefulShellRoute nav assertion is false-green") stated in full; trust-but-verify + written≠applied cross-referenced to §9/§14/orchestrator instead of duplicated (user-approved).
+
+NOT adopted (Simplicity First): no separate `-goBranch` skill (would split discovery with overlapping triggers); the 5 disciplines were not restated verbatim where §9/§14/orchestrator already bind them — only the genuinely-new ones are stated fully, the rest cross-referenced.
+
+**Reason:** This failure class (deep-link/push/StatefulShell/cold-start) is high-cost (hours per occurrence) and recurs across projects. Encoding it in skill pitfalls + a debugging-discipline block means the next project's coder catches it at skill-discovery or resolves it in minutes.
+
+**Consequences:**
+- Coders wiring bottom-nav deep links/push now get the production-hardened shell-holder + handshake pattern verbatim.
+- §13 debugging discipline is binding on every agent in a bug-loop (research/instrument before speculating; deterministic test before device loop).
+- Nothing pushed to GitHub (standing user instruction: monthly limit; bulk push next month). Local working tree only.
+
+---
+
 (Future ADRs added here.)

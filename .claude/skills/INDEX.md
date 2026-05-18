@@ -3,8 +3,8 @@
 > **coder ZORUNLU bunu okumalı.** Her task için: tokenize → score against `Triggers` → match → open SKILL.md → follow verbatim.
 > Match yoksa: implement from scratch, slug'ı phase frontmatter'da `skills_to_extract:`'e ekle.
 
-**Last updated:** 2026-05-16
-**Total skills:** 24 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
+**Last updated:** 2026-05-18
+**Total skills:** 25 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
 
 > **Validation status legend:**
 > - `pre-seeded` — written from research, NOT yet validated in a real project. Treat as ADAPT not VERBATIM. Append findings to skill's pitfalls.md after first use.
@@ -41,7 +41,7 @@
 
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
-| [`notifications-fcm`](notifications-fcm/SKILL.md) | Push (FCM) + local notifications + permission soft-ask + foreground/bg/terminated handling + deep-link routing + token rotation. iOS APNs auth key, Android 13+ POST_NOTIFICATIONS, OEM battery quirks | notification, push notification, fcm, firebase_messaging, apns, local notification, notification permission, notification deeplink | ios, android | 2026-05-10 | pre-seeded |
+| [`notifications-fcm`](notifications-fcm/SKILL.md) | Push (FCM) + local notifications + permission soft-ask + foreground/bg/terminated handling + deep-link routing (incl. non-Home tab via shell) + token rotation. iOS APNs auth key, Android 13+ POST_NOTIFICATIONS, OEM battery quirks, push-route allowlist | notification, push notification, fcm, firebase_messaging, apns, local notification, notification permission, notification deeplink, notification tab routing | ios, android | 2026-05-18 | pre-seeded |
 
 ## Payments & Subscriptions
 
@@ -82,18 +82,19 @@
 | [`crash-monitor-dual`](crash-monitor-dual/SKILL.md) | Crashlytics + Sentry dual setup — PII scrubbing, opaque user IDs, dSYM/source maps, release tagging | crashlytics, sentry, crash report, error tracking, dsym, obfuscation, source map, performance monitoring, breadcrumbs | ios, android | 2026-05-10 | pre-seeded |
 | [`remote-config-firebase`](remote-config-firebase/SKILL.md) | Firebase Remote Config — feature flags, A/B test, kill switches, force-update gate, real-time updates | remote config, feature flag, ab test, kill switch, force update, paywall variant, dynamic config | ios, android | 2026-05-10 | pre-seeded |
 
-## Forms & UI Patterns
+## Forms, UI & Layout
 
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
 | [`onboarding-flow`](onboarding-flow/SKILL.md) | First-launch onboarding — 3-5 page PageView, A/B variant, soft-ask permission pattern, deep-link replay, accessibility | onboarding, intro screens, walkthrough, first launch, welcome screen, soft ask, permission rationale | ios, android | 2026-05-10 | pre-seeded |
+| [`responsive-adaptive-layout`](responsive-adaptive-layout/SKILL.md) | App breaks (RenderFlex overflow / clipped UI) on small/large/foldable screens OR when OS font size is increased. M3 window size classes + MediaQuery.sizeOf/LayoutBuilder + clamped textScaler + size×textScale golden matrix; wired into ux-designer/architect/app-bootstrap/code-reviewer/test-writer/qa-test-guide/INTEGRATION_SMOKE | responsive, adaptive layout, RenderFlex overflow, overflowed by pixels, screen size, small phone, tablet, foldable, split screen, MediaQuery.sizeOf, LayoutBuilder, breakpoint, window size class, text scale, textScaler, font size accessibility, dynamic type, large font | ios, android | 2026-05-17 | pre-seeded |
 
 ## Networking & Sync
 
 | Slug | Purpose | Triggers | Platforms | Last Verified | Status |
 |---|---|---|---|---|---|
-| [`deeplinks-go-router`](deeplinks-go-router/SKILL.md) | Universal Links + App Links + go_router 17.x — AASA + assetlinks hosting, multi-flavor SHA, sanitization, return-to. Firebase Dynamic Links DEAD as of Aug 25 2025 | deep link, deeplink, universal link, app link, go_router, app_links, aasa, assetlinks | ios, android | 2026-05-10 | pre-seeded |
-| [`gorouter-statefulshell-deeplink`](gorouter-statefulshell-deeplink/SKILL.md) | go_router + StatefulShellRoute deep-link/push wiring — pure redirect (no provider mutation → cold-start crash), branch-aware navigation (warm tab switch), cold+warm integration tests | go_router redirect crash, StatefulShellRoute deeplink, cold start deeplink, push tap routing, modified provider during build, branch not switching | ios, android | 2026-05-16 | pre-seeded |
+| [`deeplinks-go-router`](deeplinks-go-router/SKILL.md) | Universal Links + App Links + go_router 17.x — AASA + assetlinks hosting, multi-flavor SHA, sanitization, return-to, custom-scheme `-10814`, dual-Router black screen, app_links `#if DEBUG` cold-start. Firebase Dynamic Links DEAD as of Aug 25 2025 | deep link, deeplink, universal link, app link, go_router, app_links, aasa, assetlinks, custom url scheme, CFBundleURLTypes, black screen deeplink | ios, android | 2026-05-18 | pre-seeded |
+| [`gorouter-statefulshell-deeplink`](gorouter-statefulshell-deeplink/SKILL.md) | Reliably switch a StatefulShellRoute tab on deep-link/push (redirect/GoRouter.go does NOT) — process-global shell holder + `goBranch(idx, initialLocation: idx==currentIndex)`, pure redirect, bounded cold-start handshake, `!identical` vs value-`!=` guard, cold+warm tests | go_router redirect crash, StatefulShellRoute deeplink, cold start deeplink, push tap routing, modified provider during build, branch not switching, goBranch, push lands on home, GoRouter.go does nothing in shell | ios, android | 2026-05-18 | pre-seeded |
 
 ## DevOps & CI/CD
 

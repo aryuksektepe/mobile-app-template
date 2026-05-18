@@ -139,6 +139,19 @@ orchestrator devraldı.
 
 ### MEDIUM triggers (any one, none of HIGH)
 
+- **Responsive / dynamic-type anti-patterns** (skill: `responsive-adaptive-layout`) — flag and bounce to coder; escalate to HIGH if on a critical/auth/payment screen or if text scaling is disabled:
+  - text scaling disabled or unclamped: `textScaleFactor: 1.0`, `TextScaler.noScaling`, `MediaQuery(... textScaler: TextScaler.linear(1) ...)`, or no root `MediaQuery.withClampedTextScaling` in `app.dart` → **HIGH** (accessibility + store-rejection risk)
+  - layout decided by `OrientationBuilder` / `isTablet()` / `isPhone()` / hardware checks instead of `MediaQuery.sizeOf`/`LayoutBuilder`/`core/responsive`
+  - fixed `width:`/`height:`/`SizedBox(width|height:)`/`Container(width:)` on must-fit content; `MediaQuery...size.width` used to fill width on large screens
+  - `Text` placed directly in a `Row`/`Column` cross-axis without `Flexible`/`Expanded` + `overflow`/`softWrap` (overflow at small width or large text scale)
+  - new screen/design-system component WITHOUT a size×textScale golden matrix test (test-writer must add it; missing = bounce)
+  - ad-hoc breakpoint magic numbers instead of `core/responsive/breakpoints.dart` (M3 window size classes)
+- **Behavioral-discipline violations** (CLAUDE.md §14) — flag every changed line that does NOT trace to the phase's tasks/the request; bounce to coder, do not "accept because it's fine":
+  - drive-by refactor: edits to code/structure adjacent to the change but not required by it
+  - style drift: reformatting, quote-style/import reordering, added type hints/docstrings on untouched code
+  - speculative abstraction/bloat: interface/strategy/config layer for single-use code; ~200 lines where ~50 solve it ("would a senior Flutter dev call this overcomplicated?")
+  - pre-existing dead code DELETED (not merely mentioned) without an explicit ask
+  - a task implemented with no verifiable success criterion / no test proving it (Goal-Driven, §14.4)
 - New feature with tests but covering <90% of branches in a `Notifier`
 - Refactor of an existing widget tree or provider graph (≥3 files touched in `application/` or `presentation/`)
 - New UI surface (screen) without state changes — still wants a11y + i18n review

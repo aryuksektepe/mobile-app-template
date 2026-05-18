@@ -20,8 +20,17 @@ final shellRoute = StatefulShellRoute.indexedStack(
 );
 
 // Warm deep link from a handler: switch branch explicitly, then navigate.
-void openLessonFromLink(StatefulNavigationShell shell, String lessonId) {
-  shell.goBranch(1);                 // make the Lessons tab active
-  shell.shellRouteContext... ;       // then go to the detail within it:
-  // context.go('/lessons/$lessonId');  // path is under branch 1 → branch stays
+// `initialLocation: idx == currentIndex` = same semantics as a nav-bar tap
+// (repeat target resets the branch root; a different target just activates it).
+void openLessonFromLink(
+  BuildContext context,
+  StatefulNavigationShell shell,
+  String lessonId,
+) {
+  final i = 1; // Lessons branch
+  shell.goBranch(i, initialLocation: i == shell.currentIndex);
+  // Path is UNDER branch 1, so navigating within it keeps the branch active:
+  context.go('/lessons/$lessonId');
 }
+// For the full process-global holder + cold-start handshake (push/cold start
+// where you don't have `shell` in scope), see shell_branch_controller.dart.

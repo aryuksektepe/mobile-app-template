@@ -7,6 +7,11 @@
 
 ## Shell branch
 - [ ] Deep-target routes live UNDER their `StatefulShellBranch`, or `goBranch(i)` is called
+- [ ] Branch switch goes through a process-global shell holder, NOT redirect / ancestor `GoRouter.go` (P6)
+- [ ] `goBranch` always passes `initialLocation: idx == navigationShell.currentIndex` (P7)
+- [ ] Pending-link slot consumed by a navigator mounted OUTSIDE redirect & OUTSIDE the shell
+- [ ] Cold-start handshake is bounded AND clears the slot unconditionally when the cap is hit (P8)
+- [ ] `ref.listen` guard is `next != null`, never `next != previous` (P9)
 - [ ] Warm deep link switches to the correct tab
 - [ ] Cold deep link lands on the correct screen AND the correct active tab
 

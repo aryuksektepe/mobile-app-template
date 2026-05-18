@@ -141,8 +141,12 @@ STEP 8: Dispatch via Task tool with subagent_type=<next agent>.
         The Task prompt must include:
         - Phase file path
         - One-sentence directive ("Run your role on phase 03; read CLAUDE.md
-          and the phase file first.")
+          (incl. §14 Behavioral Discipline) and the phase file first.")
         - The agent's expected output sections (so they know what to write)
+        - The phase's verifiable success criterion for this step (Goal-Driven,
+          CLAUDE.md §14.4): what "done" concretely means + how it is verified
+          (e.g. "AC-3 has a passing test", "## Integration Smoke evidence
+          present"). Never dispatch with a vague "improve/fix X" directive.
 
 STEP 9: Return a brief Turkish summary to the user:
         "Faz {id} → {old_status}'tan {new_status}'a geçti. {next_agent} çalışıyor."

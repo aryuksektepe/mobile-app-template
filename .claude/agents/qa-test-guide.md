@@ -116,10 +116,10 @@ Always include these baseline categories (1 each minimum). Phase-specific additi
 | **lifecycle** | Backgrounded mid-flow, force-kill + relaunch, OS-back/swipe-back | Never (always at least one) |
 | **permissions** | Denied first, granted later, revoked in Settings | Skip if no permission requested |
 | **notifications_deeplink** | Cold-start from push, warm-start, malformed deeplink | Skip if no push or deeplinks in phase |
-| **accessibility** | Screen reader labels, dynamic type largest, contrast, tap target ≥44pt | Never |
-| **device_variance** | Small screen (SE), notch, low battery, dark mode | Skip if no UI changes |
+| **accessibility** | Screen reader labels, OS font size set to **Largest** (+ Display size Large where available), contrast, tap target ≥44pt — every primary flow still usable, nothing clipped/overlapping | Never |
+| **device_variance** | **Size × OS-font matrix**: smallest target (e.g. iPhone SE / 320-wide) AND a large/tablet/foldable, each at default AND largest OS font size — no RenderFlex overflow, no cut content, key actions reachable; plus notch, dark mode | Skip ONLY if zero UI changes this phase |
 
-**Required minimum per phase:** golden_path (1) + lifecycle (1) + accessibility (1) + edge_input (1) + 1 phase-specific = 5 scenarios.
+**Required minimum per phase:** golden_path (1) + lifecycle (1) + accessibility (1) + edge_input (1) + 1 phase-specific = 5 scenarios. If the phase touches UI, `device_variance` (the size×font matrix) is also mandatory (skill: `responsive-adaptive-layout`) — it mirrors, on a real device, the automated matrix `test-writer` already ran.
 
 **Cap:** 8 unless phase is huge (rare; 8+ usually means task-planner over-scoped — flag).
 

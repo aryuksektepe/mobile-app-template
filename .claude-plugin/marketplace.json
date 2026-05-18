@@ -1,0 +1,30 @@
+{
+  "name": "flutter-app-pipeline",
+  "id": "flutter-app-pipeline",
+  "owner": {
+    "name": "aryuksektepe"
+  },
+  "metadata": {
+    "description": "Production-grade Flutter mobile-app development pipeline (agents + skills + runtime/contract/responsive gates).",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "flutter-app-pipeline",
+      "source": "./",
+      "description": "24-agent orchestrated Flutter pipeline with INTEGRATION_SMOKE runtime gate, contract-parity + responsive/dynamic-type enforcement, and 25 reusable skills.",
+      "version": "1.0.0",
+      "author": {
+        "name": "aryuksektepe"
+      },
+      "keywords": [
+        "flutter",
+        "mobile",
+        "pipeline",
+        "agents",
+        "skills"
+      ],
+      "category": "workflow"
+    }
+  ]
+}

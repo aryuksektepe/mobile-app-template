@@ -339,9 +339,15 @@ Every agent must enforce these baselines. Violations block progression.
 - ≥1 NON-MOCKED end-to-end flow per phase FR against a real backend (`supabase start` / staging); HTTP trace + DB row evidence pasted into `## Integration Smoke`
 - Every new Edge Function / RPC / migration applied to a real local stack with ≥1 real authenticated call → 2xx (not just "file written")
 - Every new screen has an executed, concrete tap-path from its PRD entry point ("defined route" ≠ "reachable")
+- **Responsive/dynamic-type extreme cell:** the worst combination (smallest target device + max clamped OS text scale) boots and the phase's screens render with ZERO `RenderFlex`/overflow on a real emulator — evidence pasted
 - **Contract parity (no mock may encode a bug):** every `functions.invoke` / REST call has a test asserting HTTP method + body field names against the real Edge/OpenAPI signature; every `async*` provider has a yield-contract test; boundary mocks (`any(named:'body')`) at the client↔backend edge are forbidden — assert the contract or defer it to `INTEGRATION_SMOKE`
 - `walking_skeleton_invariant` is VERIFIED by this gate, never merely declared
 - The CI runtime jobs (`build-and-boot`, `build-ios`, `backend-integration`, `integration-smoke`) MUST be green before a phase leaves `INTEGRATION_SMOKE`. Static green (analyze + mocked tests + line coverage) is necessary but NOT sufficient — it is not a running app.
+
+### Responsive & accessible text (every UI phase)
+- Layout decided from available space (`MediaQuery.sizeOf` / `LayoutBuilder` / `core/responsive`), Material 3 window size classes (Compact <600 / Medium 600–840 / Expanded >840). No `OrientationBuilder`/`isTablet()` for layout, no fixed sizes on must-fit content, no full-width gobble on large screens.
+- OS text scaling RESPECTED and root-clamped via `MediaQuery.withClampedTextScaling` (default `1.0–1.3`, = design-system §22). Disabling text scaling is forbidden (accessibility + store risk).
+- Every new screen / design-system component has a size×textScale golden matrix test ({320×640,390×844,768×1024} × {1.0,1.3,2.0}) asserting no overflow at every cell (test-writer Iron Rule #10). `qa-test-guide` mirrors it on a real device (smallest + largest OS font). Skill: `responsive-adaptive-layout`.
 
 ### Security (MASVS-aligned)
 - No secrets in source — use `--dart-define` + secure CI vars
@@ -415,6 +421,29 @@ When any agent starts, it MUST read in this order:
 - **Two agents disagree:** Surface to user with both positions. Do not auto-resolve.
 - **A skill turned out wrong:** Update the skill's `pitfalls.md`, bump `last_verified`, fix in current project.
 - **The user contradicts a rule in CLAUDE.md:** Confirm explicitly that the user wants to override the rule for this project, then update `.project/decisions.md`. Do NOT silently override.
+
+### Debugging discipline (when a bug fights back)
+
+Triggered when a fix didn't take, a bug reproduces after a "fix", or you are >1 iteration into a platform/SDK/native/cold-start issue. These exist because a real run (Mimirva deep-link campaign) burned ~hours on each: the cure was a discipline, not more code.
+
+1. **Research before fix.** For a platform / SDK / native / config bug, verify the official doc + the *exact* error code/string via WebSearch BEFORE writing a fix (e.g. Apple "Defining a custom URL scheme", the Flutter issue tracker, the package CHANGELOG / `pubspec.lock` pin — confirm, don't assume the version). A speculative fix to a misdiagnosed platform bug is the canonical hours-burner. (This is the concrete debugging form of §14.1 "Think before coding".)
+2. **Instrument, don't speculate.** When the console is detached (cold start, push-launched, release-mode boot) you cannot see logs — so don't guess. Add a temporary file-trace helper (`getApplicationDocumentsDirectory()/trace.log`), reproduce, then pull it (`xcrun simctl get_app_container <udid> <bundle> data` / `adb`). Measure the actual path; remove the helper before the phase closes.
+3. **Deterministic test over device.** If a defect is provable by a deterministic widget/unit test, write that test FIRST — do not wait on a device smoke loop to see it. **A mocked `StatefulShellRoute` navigation assertion is false-green**: assert the state machine / branch index, not a mocked widget tree. (Per-task expression of §9 "Runtime" + test-writer Iron Rules; the false-green nuance is binding on test-writer + code-reviewer.)
+4. **Trust but verify (orchestrator).** A coder/agent "all gates passed / done" is a claim, not evidence — the orchestrator independently re-checks the diff + the gate before advancing. (Already binding via orchestrator STEP 8 + §14.4; restated here as a debugging-loop guard.)
+5. **Written ≠ applied (server/backend).** Every RPC / trigger / RLS / cron / Edge fn must be an *applied* migration under `supabase/migrations/` AND proven by ≥1 real authenticated call — never SQL dropped in `supabase/functions/`, never "file written". (Already enforced by §9 "Runtime" + INTEGRATION_SMOKE criterion 4 + the `supabase-*` skills; restated here because it is the #1 "fixed it but it never ran" trap.)
+
+---
+
+## 14. Behavioral Discipline (every agent, every turn)
+
+This is HOW agents work, distinct from the WHAT-gates in §3/§9. It exists because the runtime gates catch "never ran it"; these catch "assumed wrong / overcomplicated / drive-by-refactored / no success criterion". Subagents read this file, not the harness prompt — so it is binding here. (Derived from Andrej Karpathy's LLM-coding-pitfall observations; adapted to this pipeline.)
+
+1. **Think before coding.** Don't assume on the user's behalf and run with it. State assumptions explicitly; if multiple readings exist, surface them — don't pick silently; if a simpler path exists, say so and push back; if something is unclear or inconsistent, stop and ask. This refines, not overrides, §8 autonomous mode: autonomy bypasses approval *gates*, never the duty to surface a real ambiguity or contradiction.
+2. **Simplicity first.** Minimum code that solves the stated problem. No feature, abstraction, "flexibility", or error-handling for impossible cases beyond what was asked. Single-use code gets no abstraction. If 200 lines could be 50, rewrite. Test: "would a senior Flutter dev call this overcomplicated?" — if yes, simplify. (A bloated construction is itself a code-reviewer finding.)
+3. **Surgical changes.** Touch only what the task requires. No "improving" adjacent code/comments/formatting, no refactor of things that aren't broken, match existing style even if you'd do it differently. Remove only the imports/vars/functions *your* change orphaned; pre-existing dead code is *mentioned* (handoff notes / `## Open Questions`), not deleted unless asked. Every changed line must trace to the request or the active phase's tasks. Read-only agents stay read-only.
+4. **Goal-driven execution.** Convert each task into a verifiable success criterion before acting ("add validation" → "tests for invalid input fail, then pass"; "fix bug" → "a test reproduces it, then passes; suite still green"). State a brief `step → verify` plan for multi-step work and loop until the verify passes. This is the per-task expression of the §3 evidence philosophy (INTEGRATION_SMOKE = the per-phase one): a claim without a verification is not done.
+
+Working if: diffs contain only request-traceable lines, fewer rewrites from overcomplication, and clarifying questions arrive *before* implementation, not after a wrong assumption shipped. For genuinely trivial tasks, use judgment — don't bureaucratize a one-liner.
 
 ---
 

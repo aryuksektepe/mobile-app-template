@@ -1,0 +1,50 @@
+{
+  "name": "flutter-app-pipeline",
+  "description": "Production-grade Flutter mobile-app development pipeline: 24-agent orchestrated state machine with mandatory runtime (INTEGRATION_SMOKE), contract-parity and responsive/dynamic-type gates, plus 25 battle-oriented reusable skills.",
+  "version": "1.0.0",
+  "author": {
+    "name": "aryuksektepe"
+  },
+  "license": "MIT",
+  "keywords": [
+    "flutter",
+    "mobile",
+    "pipeline",
+    "agents",
+    "skills",
+    "riverpod",
+    "supabase",
+    "integration-smoke",
+    "responsive"
+  ],
+  "agents": "./.claude/agents",
+  "commands": "./.claude/commands",
+  "hooks": "./.claude/settings.json",
+  "skills": [
+    "./.claude/skills/analytics-firebase",
+    "./.claude/skills/auth-apple-signin",
+    "./.claude/skills/auth-firebase-email",
+    "./.claude/skills/auth-google-signin",
+    "./.claude/skills/crash-monitor-dual",
+    "./.claude/skills/deeplinks-go-router",
+    "./.claude/skills/firebase-core-setup",
+    "./.claude/skills/flutter-build-boot-gate",
+    "./.claude/skills/gorouter-statefulshell-deeplink",
+    "./.claude/skills/notifications-fcm",
+    "./.claude/skills/onboarding-flow",
+    "./.claude/skills/promo-codes-system",
+    "./.claude/skills/regen-clean-after-diagnostics",
+    "./.claude/skills/remote-config-firebase",
+    "./.claude/skills/responsive-adaptive-layout",
+    "./.claude/skills/riverpod-2x-disposed-flag-guard",
+    "./.claude/skills/riverpod-autodispose-chain-churn",
+    "./.claude/skills/riverpod-fetch-then-subscribe-yield",
+    "./.claude/skills/secure-storage-tokens",
+    "./.claude/skills/subs-revenuecat",
+    "./.claude/skills/supabase-functions-client-contract-parity",
+    "./.claude/skills/supabase-local-verify-jwt-es256-hs256",
+    "./.claude/skills/supabase-progress-aggregation-trigger",
+    "./.claude/skills/supabase-read-through-cache-mirror",
+    "./.claude/skills/supabase-rls-client-contract"
+  ]
+}

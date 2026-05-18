@@ -306,7 +306,11 @@ Sets up Sentry, Crashlytics, error handlers, runs the app inside `runZonedGuarde
 
 #### `lib/src/app.dart`
 
-Top-level `MaterialApp.router` consuming `appRouterProvider` and `appThemeProvider` (light + dark from design-system).
+Top-level `MaterialApp.router` consuming `appRouterProvider` and `appThemeProvider` (light + dark from design-system). MUST wrap `MaterialApp.router` in `MediaQuery.withClampedTextScaling(minScaleFactor: 1.0, maxScaleFactor: <design-system.md §22 max, default 1.3>, child: …)`. NEVER disable text scaling. Skill: `responsive-adaptive-layout`.
+
+#### `lib/src/core/responsive/breakpoints.dart`
+
+Material 3 window size classes (Compact `<600` / Medium `600–840` / Expanded `>840`) + `context.windowSize` extension + `responsive<T>()` helper, per architecture §14 + design-system §22. This is the single breakpoint authority — coder references it, never ad-hoc widths or `isTablet()`.
 
 #### `lib/src/core/env/flavor.dart`
 
@@ -385,13 +389,14 @@ void main() {
 }
 ```
 
-#### `integration_test/app_boot_test.dart` (the runtime gate — drives the REAL flavored entrypoint)
+#### `integration_test/boot_smoke_test.dart` (the runtime gate — drives the REAL flavored entrypoint)
 
 `app_smoke_test.dart` pumps `App` directly, so it never exercises `main()` /
 `bootstrap()` (Sentry/Crashlytics/Riverpod scope/Firebase init) — the layer
-where boot aborts actually happen. `app_boot_test.dart` drives the real
+where boot aborts actually happen. `boot_smoke_test.dart` drives the real
 flavored `main()` and fails on ANY uncaught `FlutterError` during boot. This
-is the gate the pipeline previously lacked.
+is the gate the pipeline previously lacked. Install it + `tool/smoke_boot.sh`
+from the `flutter-build-boot-gate` skill (BOOT_OK marker harness).
 
 ```dart
 // Boot smoke: proves the app COMPILES and BOOTS with zero uncaught
@@ -421,6 +426,15 @@ void main() {
 Adapt the `import` to the project's real package name + flavored entrypoint
 (`main_dev.dart`) and the first-screen assertion to whatever `app_router.dart`
 renders at `/`. If `bootstrap()` requires a backend, also wire Stage 5.F step 3.
+
+#### `test/golden/responsive_matrix_test.dart` (size × textScale harness)
+
+Install the matrix harness from the `responsive-adaptive-layout` skill
+(`snippets/responsive_golden_test.dart`): every new screen / design-system
+component is rendered at sizes `{320×640, 390×844, 768×1024}` × textScale
+`{1.0, 1.3, 2.0}` and asserts NO `RenderFlex`/overflow. The placeholder
+`SystemUnderTest` is replaced per screen by `test-writer`. This is what makes
+"breaks on a small phone / at large OS font" visible in CI, not at launch.
 
 State: `Skeleton code ✓ ({N} files)`.
 
@@ -504,7 +518,7 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          script: flutter test integration_test/app_boot_test.dart
+          script: flutter test integration_test/boot_smoke_test.dart
 
   build-ios:
     name: Build (iOS, no codesign)

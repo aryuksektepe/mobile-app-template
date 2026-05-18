@@ -1,6 +1,7 @@
 # Deep Links — Pitfalls Catalog
 
-16 entries from Apple/Google docs, Branch.io guides, Flutter GitHub issues.
+21 entries from Apple/Google docs, Branch.io guides, Flutter GitHub issues,
+and a real production run (Mimirva deep-link/push campaign — #17–#21).
 
 | # | Symptom | Cause | Fix | Source |
 |---|---|---|---|---|
@@ -20,3 +21,8 @@
 | 14 | Deferred deep link lost after install (FDL replacement) | No SDK installed; iOS clipboard prompt scares users | Use Branch NativeLink, AppsFlyer OneLink, or build clipboard fallback with explicit "we copied your invite code, paste it here" UX | [Tapp FDL guide](https://www.tapp.so/firebase-dynamic-links-deprecation-guide/) |
 | 15 | `intent-filter` `host` typo silently breaks verification | Typo in `android:host="exmaple.com"` | Always copy host from production URL; run `pm verify-app-links --re-verify` after build | [Android docs](https://developer.android.com/training/app-links/verify-applinks) |
 | 16 | iOS 14 Private Relay breaks IP-based deferred links | Private Relay anonymizes IP that fingerprint matching used | Switch to Branch NativeLink (clipboard-based with user consent) or first-party login linking | [Branch NativeLink](https://help.branch.io/developer-hub/docs/nativelink-deferred-deep-linking) |
+| 17 | `yourscheme://` never opens the app (iOS); console shows `-10814` / `kLSApplicationNotFoundErr` | Custom scheme not registered in `ios/Runner/Info.plist` `CFBundleURLTypes`. The Google Sign-In placeholder `<dict>` does NOT register your scheme | Add a SEPARATE `<dict>` with `CFBundleURLSchemes: [yourscheme]`. Diagnose: `xcrun simctl openurl <udid> 'yourscheme://x'` → `-10814` in console | [Apple: Defining a custom URL scheme](https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app) |
+| 18 | Black screen when a deep link is delivered | `MaterialApp(home: Shell)` + a nested `Router.withConfig` → two `InheritedGoRouter` / Duplicate GlobalKey cascade | ONE Router only: `MaterialApp.router(routerConfig: router)`. Put the builder chain (l10n, scope, watchers) in `MaterialApp.router`'s `builder:` | log shows "Duplicate GlobalKey" / two "InheritedGoRouter" |
+| 19 | Cold-start deep link never fires in the simulator / `getInitialLink()` null on cold start | `app_links`' `AppLinksIosPlugin.register(with:)` is wrapped in `#if DEBUG` (workaround for Flutter #149214) — only fires in a `flutter run` session, not `simctl openurl` cold start or real FCM/Universal-Link cold start | Don't burn hours repro'ing in the sim; bind cold-start verification to a real-build phase (INTEGRATION_SMOKE). Confirm the pinned version from `pubspec.lock`, don't assume | [Flutter #149214](https://github.com/flutter/flutter/issues/149214) |
+| 20 | Deep link/push to a non-Home tab opens Home (bottom-nav `StatefulShellRoute`) | `GoRouter.go()` / redirect / `initialLocation` from an ancestor does NOT switch the `IndexedStack` branch | Use the `gorouter-statefulshell-deeplink` skill: process-global shell holder + `goBranch(idx, initialLocation: idx==currentIndex)`, consume outside redirect | nav-bar tap switches tabs but deep-link doesn't |
+| 21 | Re-delivered identical deep link is swallowed (2nd tap no-op / cold-start stuck) | A notifier notifies on `!identical` (new object) but the `ref.listen` guard uses value-`!=` → `'/x' != '/x'` is `false` | Guard on `if (next != null)`; leave idempotency to the notifier's `clear()`. See `gorouter-statefulshell-deeplink` P9 | warm 2nd tap on the same link is a no-op |

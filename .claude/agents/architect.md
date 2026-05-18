@@ -336,6 +336,20 @@ Tools: `build_runner` for `riverpod_generator`, `freezed`, `json_serializable`, 
 - No hardcoded colors / sizes in widgets — must reference theme.
 - Typography MUST use `Theme.of(context).textTheme` or a typed extension.
 
+**Responsive & dynamic-type contract (explicit decision — not optional):**
+- Breakpoints follow **Material 3 window size classes**: Compact `<600` /
+  Medium `600–840` / Expanded `>840` dp. A single source `core/responsive/
+  breakpoints.dart` (window size class + helpers) is the ONLY breakpoint
+  authority — no ad-hoc width magic numbers, no `OrientationBuilder` /
+  `isTablet()` for layout.
+- Root **text-scale clamp** is mandatory: `MediaQuery.withClampedTextScaling`
+  around `MaterialApp`, default `minScaleFactor: 1.0, maxScaleFactor: 1.3`
+  (must equal design-system.md §22). Disabling text scaling is FORBIDDEN
+  (accessibility + store risk).
+- State the chosen clamp + breakpoint set as an ADR if it deviates from the
+  default. Skill: `responsive-adaptive-layout`. Enforced by code-reviewer,
+  test-writer (size×textScale golden matrix) and the `INTEGRATION_SMOKE` gate.
+
 ## §15. Asset & Font Pipeline
 
 - Assets in `assets/images/`, `assets/icons/`, `assets/fonts/`.

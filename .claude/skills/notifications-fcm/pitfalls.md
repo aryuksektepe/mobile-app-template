@@ -1,6 +1,7 @@
 # Notifications (FCM + Local) — Pitfalls Catalog
 
-14 entries from FlutterFire docs, GitHub issues, and Pushy/Android dev research.
+16 entries from FlutterFire docs, GitHub issues, Pushy/Android dev research,
+and a real production run (Mimirva push navigation campaign — #15–#16).
 
 | # | Symptom | Cause | Fix | Source |
 |---|---|---|---|---|
@@ -18,3 +19,5 @@
 | 12 | `onTokenRefresh` fires repeatedly, backend fills with dead tokens | Treating tokens as user-scoped instead of device-scoped; missing failure-driven cleanup | Store `(userId, deviceId, token, updatedAt)`; delete on FCM `UNREGISTERED` send error; expire after 30 days idle | [Firebase token mgmt](https://firebase.google.com/docs/cloud-messaging/manage-tokens) |
 | 13 | Provisional permission users never see banners | Provisional = "Deliver Quietly" (Notification Center only, no banner/sound) until user opts in | Document expected UX; surface an in-app upsell to upgrade to full permission | [Apple iOS 12 provisional](https://github.com/iosbrain/iOS-12-Provisional-Authorization-for-Quiet-Notifications) |
 | 14 | iOS silent (`content-available`) push not waking app | Throttled by iOS to ~2-3/hour; also blocked in Low Power Mode | Use sparingly; combine with visible push for critical sync; do not rely on for real-time | [Pushy gist](https://gist.github.com/gdeglin/98aeda28035b45cef04bb6c2cb41a4aa) |
+| 15 | Notification tap targeting a non-Home tab opens Home (bottom-nav `StatefulShellRoute`) | `GoRouter.go(tabRoute)` from the tap handler does NOT switch the `IndexedStack` branch | Use the `gorouter-statefulshell-deeplink` skill: park the resolved branch index, switch via process-global shell holder + `goBranch(idx, initialLocation: idx==currentIndex)` | nav-bar tap switches tabs but notification tap doesn't |
+| 16 | A crafted push route navigates somewhere the URL allowlist should have blocked | `setPath(rawRoute)` from the payload runs BEFORE the deep-link allowlist/sanitizer | Resolve + allowlist-check the route FIRST, THEN `setPath` — never let the raw payload route bypass the same validation a Universal Link gets (OWASP MASVS) | a push payload reaches a gated/internal route |

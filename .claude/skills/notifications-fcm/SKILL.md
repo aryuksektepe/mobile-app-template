@@ -1,9 +1,9 @@
 ---
 name: notifications-fcm
 description: Push notifications (FCM) + local notifications (flutter_local_notifications) + permission flow + foreground/background/terminated handling + deep-link routing on tap. Token rotation + multi-device support. iOS APNs auth key, Android 13+ POST_NOTIFICATIONS, channel hygiene, rich notifications, OEM battery optimization workarounds. Use whenever push or local notifications are needed.
-triggers: [notification, push notification, fcm, firebase_messaging, apns, local notification, notification permission, notification deeplink, notification channel, foreground notification, background message, silent push]
+triggers: [notification, push notification, fcm, firebase_messaging, apns, local notification, notification permission, notification deeplink, notification channel, foreground notification, background message, silent push, notification tab routing, push lands on home, push route allowlist]
 platforms: [ios, android]
-last_verified: 2026-05-10
+last_verified: 2026-05-18
 flutter_min: "3.38.1"
 ios_min: "13.0"
 android_min_sdk: 24

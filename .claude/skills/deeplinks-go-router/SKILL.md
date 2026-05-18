@@ -1,9 +1,9 @@
 ---
 name: deeplinks-go-router
 description: Universal Links (iOS) + App Links (Android) + go_router 17.x integration. AASA + assetlinks.json hosting, multi-flavor SHA support, cold-start vs warm-start handling, auth-aware redirect with return-to, URL whitelist + sanitization. Firebase Dynamic Links is DEAD as of Aug 25 2025 — use this skill instead.
-triggers: [deep link, deeplink, universal link, app link, go_router, app_links, aasa, assetlinks, firebase dynamic links, branch.io, deferred deep link, url scheme]
+triggers: [deep link, deeplink, universal link, app link, go_router, app_links, aasa, assetlinks, firebase dynamic links, branch.io, deferred deep link, url scheme, custom url scheme, CFBundleURLTypes, -10814, black screen deeplink, InheritedGoRouter, cold start deeplink simulator]
 platforms: [ios, android]
-last_verified: 2026-05-10
+last_verified: 2026-05-18
 flutter_min: "3.22.0"
 ios_min: "12.0"
 android_min_sdk: 21
