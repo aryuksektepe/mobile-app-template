@@ -1,0 +1,69 @@
+# Add to pubspec.yaml — both packages share config space at the file root level.
+# Run after edits:
+#   dart run flutter_native_splash:create
+#   dart run flutter_launcher_icons
+# Re-run after every asset / color change.
+
+# ────────────────────────────────────────────────────────────────────
+# flutter_native_splash
+# ────────────────────────────────────────────────────────────────────
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/splash/logo.png             # centered logo, ≥ 512×512 PNG, transparent bg
+  branding: assets/splash/wordmark.png       # optional bottom-center wordmark
+  branding_mode: bottom
+
+  # Dark mode
+  color_dark: "#000000"
+  image_dark: assets/splash/logo_dark.png
+  branding_dark: assets/splash/wordmark_dark.png
+
+  # Android 12+ Splash Screen API (REQUIRED for modern Android)
+  android_12:
+    image: assets/splash/android12_icon.png        # 1:1 brand icon, ≥ 1152×1152
+    color: "#FFFFFF"
+    image_dark: assets/splash/android12_icon_dark.png
+    color_dark: "#000000"
+    # Optional brand image at bottom — keep small
+    # branding: assets/splash/android12_branding.png
+
+  # Web (PWA splash)
+  web: false
+
+  # Auto-remove the native splash after a short delay (so it doesn't linger forever
+  # if FlutterNativeSplash.remove() is never called from Dart).
+  # Recommended: call FlutterNativeSplash.remove() explicitly from root provider's
+  # "ready" callback for a clean handoff.
+  fullscreen: false
+
+
+# ────────────────────────────────────────────────────────────────────
+# flutter_launcher_icons
+# ────────────────────────────────────────────────────────────────────
+flutter_launcher_icons:
+  image_path: "assets/icon/icon_1024.png"          # 1024×1024, square, full-bleed
+  remove_alpha_ios: true                            # iOS needs solid bg (no transparency)
+
+  # Android
+  android: "launcher_icon"                          # output name; manifest stays unchanged
+  min_sdk_android: 24
+
+  adaptive_icon_background: "#FFFFFF"               # solid color OR drawable XML reference
+  adaptive_icon_foreground: "assets/icon/foreground.png"   # 1024×1024, padded ≈ 1/3
+  adaptive_icon_monochrome: "assets/icon/monochrome.png"   # Android 13 themed icon (white-on-transparent)
+
+  # iOS
+  ios: true
+
+  # macOS / web (set to false unless you ship those)
+  macos:
+    generate: false
+  web:
+    generate: false
+
+
+# Asset paths must also be declared in the standard assets list:
+flutter:
+  assets:
+    - assets/splash/
+    - assets/icon/

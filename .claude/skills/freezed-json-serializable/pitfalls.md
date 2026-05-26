@@ -1,0 +1,14 @@
+# freezed + json_serializable — Pitfalls Catalog
+
+| # | Symptom | Cause | Fix | Source |
+|---|---|---|---|---|
+| 1 | "Default Dart 3 behavior" warning; switch exhaustiveness lost | freezed 2.x union style instead of 3.x sealed | Migrate: `@freezed class State` → `@freezed sealed class State`; use `switch (state) { case _: }` | [freezed 3.0 migration](https://pub.dev/packages/freezed#changelog) |
+| 2 | `_$FooFromJson` undefined | Missing `factory Foo.fromJson(...) => _$FooFromJson(json);` | Add it; re-run `build_runner build` | [json_serializable](https://pub.dev/packages/json_serializable) |
+| 3 | Nested freezed: parent toJson() returns child as `{}` | json_serializable doesn't call nested toJson by default | `@JsonSerializable(explicitToJson: true)` on the parent class | [json_serializable explicitToJson](https://pub.dev/packages/json_serializable#serialization-customization) |
+| 4 | CI generated-clean gate red-fails for no apparent reason | Local generated files drifted from fresh build_runner — usually timestamp / non-deterministic codegen | Pre-push: `dart run build_runner build --delete-conflicting-outputs` then commit (see `regen-clean-after-diagnostics`) | this template's skill |
+| 5 | Release crash `NoSuchMethodError: Class 'Foo' has no instance method 'toJson'` | R8 stripped the class because nothing references it directly (only reflected fromJson) | Add `-keep class your.app.models.** { *; }` (per `ios-android-hardening`) | R8 docs |
+| 6 | `DateTime` round-trip changes the value | TZ confusion — value stored in local, parsed as local but compared as UTC | Use `DateTimeConverter` (UTC discipline); domain-layer rule: all DateTime is UTC | this skill |
+| 7 | Enum from backend `"PRO"` doesn't map | Backend sends UPPERCASE, your enum is lowercase | Custom EnumConverter that normalizes (`.toLowerCase()`) before lookup; OR use `@JsonValue('PRO') pro` on enum | [json_serializable enums](https://pub.dev/packages/json_serializable#enum-types) |
+| 8 | `@Default(...)` not applied — field is null in JSON, parsed value is null | json_serializable applies `@Default` ONLY when key MISSING, not when value is `null`. Explicit null still passes through | If you also want null→default: `final value = json['key'] as Type? ?? defaultValue` (manual) OR mark field non-nullable | json_serializable docs |
+| 9 | `_$_Foo()` constructor private — can't construct from outside | freezed `_Foo` is the private impl; use `Foo(...)` factory | Use the public factory: `User(id: ...)`, not `_User(...)` | freezed docs |
+| 10 | `copyWith` won't set a field to null | freezed's `copyWith` treats missing arg as "no change" — passing `null` explicitly works if field is nullable | Use `Foo(...)` constructor with all fields when "explicit null" semantics needed; OR upgrade to freezed 3.x's `copyWith.identifier(value)` | freezed copyWith docs |

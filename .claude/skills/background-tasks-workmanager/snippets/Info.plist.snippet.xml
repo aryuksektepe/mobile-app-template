@@ -1,0 +1,24 @@
+<!-- ios/Runner/Info.plist
+     Required for workmanager iOS to register tasks.
+     Identifiers MUST match what you pass to registerPeriodicTask / registerOneOffTask.
+-->
+
+<key>BGTaskSchedulerPermittedIdentifiers</key>
+<array>
+  <string>com.yourcompany.app.sync</string>
+  <string>com.yourcompany.app.cleanup</string>
+</array>
+
+<!-- Also REQUIRED in Xcode Capabilities → Background Modes:
+       ✓ Background fetch
+       ✓ Background processing
+     Without these the OS never wakes the app for BGTasks.
+-->
+
+<!-- Testing on iOS:
+     1. Run app on real device (BGTaskScheduler not on simulator).
+     2. Schedule the task.
+     3. Send app to background.
+     4. Force-trigger via debug:
+        (lldb) e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.yourcompany.app.sync"]
+-->

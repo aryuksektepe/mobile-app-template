@@ -1,0 +1,14 @@
+# Force Update Gate — Pitfalls Catalog
+
+| # | Symptom | Cause | Fix | Source |
+|---|---|---|---|---|
+| 1 | All users locked out, can't be reverted | Force-update enabled without staged rollout + Firebase RC partial outage | Use RC conditions for 5%→25%→100% staged rollout; keep ability to instantly revert via RC default value | [Firebase RC staged](https://firebase.google.com/docs/remote-config/rollouts) |
+| 2 | Version compare says `2.10.0 < 2.9.0` (wrong) | String comparison instead of semver int parsing | Use `_semverLt()` (snippet) — parses `int.parse` per component | semver.org |
+| 3 | Force-update modal can be dismissed by swipe-down / back gesture | Missing `PopScope(canPop: false, ...)` wrapper | Wrap the screen; verify on both iOS predictive-back gesture + Android back button | [Flutter PopScope](https://api.flutter.dev/flutter/widgets/PopScope-class.html) |
+| 4 | Huawei device — "open Play Store" button does nothing | `market://` scheme not handled (no Play Store installed) | Fall back to HTTPS `https://play.google.com/store/apps/details?id=...` (still works in Huawei browser) | Huawei dev forums |
+| 5 | First launch with no network shows force-update modal | RC `getString('minimum_version')` returned empty → comparison may default-fail | Set RC default values (`rc.setDefaults({'minimum_version': '0.0.0'})`) before fetch; empty string also treated as "no min" in `update_gate.dart` | [FirebaseRC defaults](https://firebase.google.com/docs/remote-config/loading) |
+| 6 | App Review reject — "app requires update to use" | App Review tested with a build that triggered force-update | RC condition `App Version != %REVIEW_BUILD%` OR ship review-bypass flag via App Tracking iOS account | [Apple Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
+| 7 | User updates app, force-update STILL shows | App didn't re-fetch RC after update install | Re-fetch on every cold start AND first foreground resume (the snippet does this) | [Firebase RC fetch](https://firebase.google.com/docs/remote-config/get-started?platform=flutter) |
+| 8 | Multiple "update" modals stacking (e.g., RC realtime + cold start) | Both fired independently | The provider is a `FutureProvider` — single in-flight; rebuild only changes state, not re-pushes modal | this skill |
+| 9 | Soft-update banner shown after user already updated | RC value was stale; user updated but cache hadn't refreshed | `setMinimumFetchInterval(zero)` in dev mode; in production 1h is reasonable | [Firebase RC settings](https://firebase.google.com/docs/remote-config/get-started?platform=flutter#step-3) |
+| 10 | Force-update used as a kill switch for a feature bug | Wrong tool — feature flag suffices | Use Remote Config booleans for feature kill switches; force-update is for app-level breaking changes | this skill's own decision tree |

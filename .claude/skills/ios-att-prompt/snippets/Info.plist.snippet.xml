@@ -1,0 +1,18 @@
+<!-- ios/Runner/Info.plist
+     Apple Guideline 5.1.2(i): be SPECIFIC. List the categories of data and reasons.
+     Vague strings ("for a better experience") are rejected.
+     Keep ≤175 chars (iPad clip risk). Localize via Runner/{locale}.lproj/InfoPlist.strings.
+-->
+<key>NSUserTrackingUsageDescription</key>
+<string>İçeriği ilgi alanlarına göre önermek ve reklam performansını ölçmek için cihaz tanıtıcınızı kullanırız. Bu izin uygulamanın çalışması için gerekli değildir.</string>
+
+<!-- If you also want SKAdNetwork postbacks (AdMob / Adjust / AppsFlyer): -->
+<key>SKAdNetworkItems</key>
+<array>
+  <!-- Each ad partner gives you their SKAdNetworkIdentifier. Example: -->
+  <dict>
+    <key>SKAdNetworkIdentifier</key>
+    <string>cstr6suwn9.skadnetwork</string>  <!-- Google -->
+  </dict>
+  <!-- Add Adjust / AppsFlyer / Meta / TikTok IDs from their docs -->
+</array>

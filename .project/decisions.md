@@ -193,4 +193,56 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-008 — 17 new skills filling store/legal + MASVS + production-recurrence gaps
+**Date:** 2026-05-26
+**Status:** Accepted (auto-approved per user: "eksik gördüğün skilleri ekle ancak token optimizasyonunu maliyeti gözet, pipeline akışını koru")
+
+**Decision:** Expand the skill library from 25 → 42 (+17) to close the gaps surfaced by a structured audit against (a) CLAUDE.md §9 quality bar items that had no skill, (b) Apple/Play store mandates with no walkthrough, (c) production-recurring pitfalls observed across the template's stack. All 17 added as `validation_status: pre-seeded` (research-based, not yet battle-tested in a shipped real-project run) so the standard ADAPT-not-VERBATIM rule applies until promoted.
+
+**New skills, grouped by tier:**
+
+**Tier 1 — Store/legal critical (4):**
+- `ios-att-prompt` — App Tracking Transparency flow with pre-prompt + ATT timing + IDFA gating + Consent Mode v2 coordination. Apple Guideline 5.1.2(i).
+- `ios-privacy-manifest` — PrivacyInfo.xcprivacy (Apple mandate since May 1 2024): data types + tracking domains + Required Reason APIs + third-party SDK manifest+signature audit. Closes ITMS-91056/91061/91065 reject paths.
+- `account-deletion-cross-cutting` — 9-step orchestrated deletion across auth + RC + FCM + analytics + Crashlytics + Sentry + secure storage + Drift, with Apple SIWA token revocation REST + RC user DELETE REST + supabase soft-delete + 30-day hard-purge cron. Apple 5.1.1(v) + Play "Data deletion" mandate.
+- `ios-android-hardening` — release build hardening: `--obfuscate --split-debug-info`, R8/ProGuard keep rules for the full template stack (Firebase/Drift/freezed/RC/Sentry/etc.), iOS Strip Style + dSYM, `verify-release-shrinking.sh` smoke gate.
+
+**Tier 2 — MASVS / production baseline (3):**
+- `certificate-pinning-dio` — public-key SPKI pinning via Dio with primary+backup pin, debug bypass, fail-closed, rotation runbook. MASVS-NETWORK-1.
+- `force-update-gate` — Remote Config minimum_version + recommended_version flow, blocking modal, store deep link, semver compare, staged rollout, Huawei/Amazon HTTPS fallback.
+- `splash-and-launcher-icon` — flutter_native_splash 2.x + flutter_launcher_icons 0.14+: Android 12+ splash API, iOS launch storyboard, dark variants, RTL, adaptive icons + Android 13 themed monochrome.
+
+**Tier 3 — Production-recurrence high (6):**
+- `auth-firebase-phone-otp` — phone OTP with reCAPTCHA fallback (iOS), Play Integrity (Android), test phone numbers, SMS auto-retrieval, country picker, account linking. TR/EM markets staple.
+- `dio-interceptor-stack` — production interceptor chain: auth header, 401 refresh-token mutex (no token storm), exponential retry, PII-scrubbed logging, cancel tokens, base URL per flavor.
+- `drift-schema-migrations` — append-only migration discipline, schema dump per version + generated upgrade tests, FK PRAGMA, type converters (Enum/DateTime/JSON), transaction pattern.
+- `freezed-json-serializable` — freezed 3.x sealed unions + json_serializable patterns: @JsonKey snake_case, custom DateTime/Enum converters, @Default null-safe, build_runner workflow, codegen drift catching (pairs with `regen-clean-after-diagnostics`).
+- `permission-handler-centralized` — single PermissionService for camera/photos/location/contacts/mic/notifications: soft-ask, just-in-time, settings deep link, iOS Info.plist usage strings, Android 13/14 specifics (POST_NOTIFICATIONS, partial photo access).
+- `connectivity-offline-ux` — `connectivity_plus` 6.x stream + global offline banner + queued ops on reconnect, with the critical "interface vs internet reachability" distinction (captive portal trap).
+
+**Tier 4 — Medium-recurrence (4):**
+- `media-picker-upload` — image_picker → crop → compress → Firebase/Supabase Storage upload, with EXIF orientation fix, MIME guard, size pre-check, Android 14 partial-photo handling.
+- `background-tasks-workmanager` — workmanager 0.6+ for iOS BGAppRefreshTask/BGProcessingTask + Android WorkManager, with explicit "NOT real-time" framing and OEM-battery-kill reality (Xiaomi/Huawei).
+- `webview-wrapper` — webview_flutter 4.x with URL allowlist, JS bridge, back-handling, mixed-content guard, and the explicit NO-OAuth-in-webview rule (Apple 4.5.4 + Google blocked).
+- `in-app-review-prompt` — in_app_review 2.x with happy-path gating (≥3 positive moments + ≥7 day install age + ≥90 day cooldown), fallback to store listing when API throttled.
+
+**Cross-cutting changes:**
+- `.claude/skills/INDEX.md` reorganized: added 5 new sections (Compliance & Security, Models & Codegen, Updates & Lifecycle, Permissions & Platform, Background & Media, WebView & Engagement) and bumped Total to 42. Dependency graph updated. Recommended Phase 01 / Phase 02 / per-feature ordering refreshed to include new foundations (freezed-json-serializable, dio-interceptor-stack, drift-schema-migrations) ahead of feature work.
+- No agent definitions modified; no CLAUDE.md edits; no hook changes — additive only, pipeline flow preserved per user instruction ("pipeline akışını koru akışımız bozulmasın").
+
+**Out of scope (rejected with rationale):**
+- Charts (fl_chart/syncfusion), PDF gen/view, search (Algolia/Typesense), maps, MFA/TOTP, advanced camera, Stripe non-IAP — all project-dependent; let skill-extractor pull from real phase use when a project actually needs them.
+
+**Reason:** A third-party audit + my own systematic gap analysis identified 17 reusable patterns that (a) every Flutter production app needs, (b) have non-obvious pitfalls or store-policy gotchas, (c) recur across projects. The marginal cost of writing them once (research + code + pitfalls + checklist) is justified by token-saving + consistency every time a coder agent reads INDEX.md and finds a verbatim-applicable skill instead of re-implementing. Specifically validated against CLAUDE.md §9 quality bar items previously missing skill coverage (ATT, Privacy Manifest, certificate pinning, ProGuard/R8, account deletion).
+
+**Consequences:**
+- **42 skills total now in the index** (up from 25). Coder agent's INDEX read cost rises (~6 KB → ~12 KB ≈ ~3K extra tokens per coder invocation), but discovery hits are far more likely → fewer "implement from scratch" loops. Net token cost is expected favorable after ≥1 hit per phase.
+- **All 17 are `pre-seeded`** — ADAPT not VERBATIM. First real project that uses them must append findings to each skill's `pitfalls.md` and bump `last_verified`. Promotion to `battle-tested` after ≥2 successful real-project deployments (per the INDEX promotion rule).
+- **Internal cross-references added** — e.g. `account-deletion-cross-cutting` depends on `auth-firebase-email` + 5 others; `dio-interceptor-stack` pairs with `certificate-pinning-dio`. The dependency graph in INDEX.md is the authoritative source.
+- **No breaking change to pipeline** — every existing skill/agent/hook untouched. Additive only.
+- **GitHub push deferred (standing user instruction).** Local working tree only — monthly limit exhausted; bulk push next month when the limit resets. Future push must include ADR-007 + ADR-008 net commits.
+- **Skill-extractor's job is preserved** — these are seeded gaps the user requested; future organic skills still flow through skill-extractor as usual on `SKILL_EXTRACTED` state.
+
+---
+
 (Future ADRs added here.)

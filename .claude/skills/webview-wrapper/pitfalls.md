@@ -1,0 +1,14 @@
+# WebView Wrapper — Pitfalls Catalog
+
+| # | Symptom | Cause | Fix | Source |
+|---|---|---|---|---|
+| 1 | App Store reject 4.5.4 — "OAuth in WebView" | OAuth provider (Google/Microsoft/etc) refuses to authenticate inside an embedded WebView | Use `url_launcher` `LaunchMode.externalApplication` for OAuth; deep-link callback back into app | [Apple 4.5.4](https://developer.apple.com/app-store/review/guidelines/#user-generated-content) + [Google block](https://developers.googleblog.com/en/modernizing-oauth-interactions-in-native-apps-for-better-usability-and-security/) |
+| 2 | Compromised link inside WebView opens attacker.com — app context intact | No URL allowlist on `NavigationDelegate` | Implement host allowlist (per snippet); off-domain navigation either blocked or opened in external browser | OWASP MASVS-PLATFORM |
+| 3 | HTTP iframe inside HTTPS WebView shows blank | Mixed-content blocked by default (correctly); silent in console | Audit content for HTTPS-only; on Android allow if intentional via `WebSettings.setMixedContentMode` (NOT recommended) | [Mixed content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content) |
+| 4 | JS `postMessage` to AppBridge ignored on first call | `addJavaScriptChannel` registered AFTER `loadRequest` | Register channels + delegate BEFORE first `loadRequest` (per snippet) | webview_flutter docs |
+| 5 | Android back button closes the screen instead of going back in webview history | `PopScope.onPopInvoked` doesn't call `controller.canGoBack()` first | Implement the back-handling pattern in snippet | webview_flutter back-nav docs |
+| 6 | File upload picker doesn't appear on Android | Android needs `WebChromeClient.onShowFileChooser` wired (the package's Android platform view handles this) | Use latest `webview_flutter_android`; verify file picker permission flow | [webview_flutter Android](https://pub.dev/packages/webview_flutter_android) |
+| 7 | iOS pull-to-refresh missing | webview_flutter iOS doesn't include native pull-to-refresh | Wrap in `RefreshIndicator` + call `controller.reload()` | webview_flutter docs |
+| 8 | Cookies persist across logout | WebView shares cookie jar with app; not auto-cleared on sign-out | On logout, call `WebViewCookieManager().clearCookies()` | webview_flutter cookies |
+| 9 | Universal Links to your domain open inside WebView instead of triggering native deep link | Navigation delegate doesn't recognize universal-link domain | Cross-check: a navigation to your `apple-app-site-association` domain should `pop` the WebView + delegate to go_router (per `deeplinks-go-router`) | webview + deep link integration |
+| 10 | Memory leak after closing WebView screen | `_controller` not disposed | webview_flutter 4.x manages internally; if using a controller in a long-lived widget, dispose manually | webview_flutter changelog |

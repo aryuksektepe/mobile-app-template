@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- android/app/src/main/res/xml/network_security_config.xml
+     Declarative Android-side pin (defense in depth ON TOP of Dart-side pinning).
+     Reference in AndroidManifest.xml inside <application>:
+       android:networkSecurityConfig="@xml/network_security_config"
+-->
+<network-security-config>
+
+  <!-- Production: pin + cleartext disallowed -->
+  <domain-config cleartextTrafficPermitted="false">
+    <domain includeSubdomains="true">api.yourdomain.com</domain>
+    <pin-set expiration="2027-12-31">
+      <!-- PRIMARY -->
+      <pin digest="SHA-256">REPLACE_WITH_PRIMARY_PIN_BASE64==</pin>
+      <!-- BACKUP -->
+      <pin digest="SHA-256">REPLACE_WITH_BACKUP_PIN_BASE64==</pin>
+    </pin-set>
+    <trustkit-config disableDefaultReportUri="true" enforcePinning="true" />
+  </domain-config>
+
+  <!-- Debug builds (Charles / Proxyman) — only included for debuggable=true APKs -->
+  <debug-overrides>
+    <trust-anchors>
+      <certificates src="user" />
+      <certificates src="system" />
+    </trust-anchors>
+  </debug-overrides>
+
+</network-security-config>

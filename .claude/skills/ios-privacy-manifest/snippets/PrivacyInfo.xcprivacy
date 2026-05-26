@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ios/Runner/PrivacyInfo.xcprivacy
+  Apple Privacy Manifest — required for App Store upload since May 1, 2024.
+
+  Drop into Runner group in Xcode → Target Membership = Runner.
+  Update every time you add a new SDK / permission / tracking endpoint.
+
+  Reason code reference (verify against Apple docs — list expands over time):
+    UserDefaults:
+      CA92.1 — access for the app itself (NOT third party)
+      1C8F.1 — access by a third-party SDK
+      C56D.1 — access for analytics/feature improvement (own)
+      AC6B.1 — app group / extension shared defaults
+    FileTimestamp:
+      0A2A.1 — own app data
+      3B52.1 — display to user (e.g. file browser)
+      C617.1 — sync with cloud
+      DDA9.1 — own developer process
+    DiskSpace:
+      7D9E.1 — display to user (low-space warning)
+      85F4.1 — sync with cloud (avoid disk-full crash)
+      B728.1 — own app data write (pre-flight)
+    SystemBootTime:
+      35F9.1 — measure performance (analytics session ID, crash timestamp)
+      8FFB.1 — calculate elapsed time for own app
+      3D61.1 — sync with cloud (TTL calc)
+    ActiveKeyboards:
+      54BD.1 — custom keyboard
+      3EC4.1 — developer's own keyboard
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <!-- 1. TRACKING -->
+  <key>NSPrivacyTracking</key>
+  <true/>  <!-- false if you do NOT combine data with other companies' data for ads -->
+
+  <key>NSPrivacyTrackingDomains</key>
+  <array>
+    <!-- Only when NSPrivacyTracking=true. When ATT denied, iOS blocks DNS to these.
+         Domain format only — NO https://, NO paths. Match the most-specific subdomain. -->
+    <string>app-measurement.com</string>
+    <string>firebaseinstallations.googleapis.com</string>
+    <!-- Add Adjust / AppsFlyer / Meta / TikTok / AdMob endpoints from their docs -->
+  </array>
+
+  <!-- 2. DATA COLLECTED -->
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array>
+
+    <!-- Auth: email address -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- Crash data (Crashlytics + Sentry) -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeCrashData</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- Device ID (Analytics, ATT-gated) -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeDeviceID</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <true/>  <!-- true only if used for cross-company tracking -->
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+        <string>NSPrivacyCollectedDataTypePurposeAdvertising</string>
+      </array>
+    </dict>
+
+    <!-- Add more: Name, ProductInteraction, PurchaseHistory, etc. -->
+
+  </array>
+
+  <!-- 3. REQUIRED REASON APIs -->
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+
+    <!-- UserDefaults — every Flutter app uses shared_preferences -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>CA92.1</string>  <!-- own app data -->
+      </array>
+    </dict>
+
+    <!-- File timestamp — image_picker, cached_network_image, file_picker, video_thumbnail -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>C617.1</string>  <!-- sync with cloud -->
+        <string>0A2A.1</string>  <!-- own app data -->
+      </array>
+    </dict>
+
+    <!-- Disk space — large downloads, video record, cache -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>B728.1</string>  <!-- own data write -->
+      </array>
+    </dict>
+
+    <!-- System boot time — analytics session, crash timestamp -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>35F9.1</string>  <!-- measure performance -->
+      </array>
+    </dict>
+
+  </array>
+
+</dict>
+</plist>

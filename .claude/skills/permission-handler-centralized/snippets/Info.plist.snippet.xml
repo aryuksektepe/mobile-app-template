@@ -1,0 +1,59 @@
+<!-- ios/Runner/Info.plist
+     Apple REJECTS apps that call a permission API without a usage string.
+     Strings must be SPECIFIC (5.1.1) — vague "for a better experience" = reject.
+     Localize via Runner/{locale}.lproj/InfoPlist.strings.
+-->
+
+<!-- Camera -->
+<key>NSCameraUsageDescription</key>
+<string>Profil fotoğrafı çekmek veya belge taramak için kameranı kullanırız.</string>
+
+<!-- Photos library (read) -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Galeriden profil fotoğrafı veya belge seçmen için galerinden okuruz.</string>
+
+<!-- Photos library (write — save image to gallery) -->
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Düzenlediğin görselleri galerine kaydedebilmek için izin gerekir.</string>
+
+<!-- Microphone -->
+<key>NSMicrophoneUsageDescription</key>
+<string>Sesli mesaj kaydı ve video çekimi için mikrofonu kullanırız.</string>
+
+<!-- Location when-in-use -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Yakındaki içerikleri göstermek için uygulamayı kullanırken konumunu okuruz.</string>
+
+<!-- Location always (rare — use only with strong justification) -->
+<!--
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>...</string>
+-->
+
+<!-- Contacts -->
+<key>NSContactsUsageDescription</key>
+<string>Rehberinden arkadaşlarını davet edebilmen için kişilere bakarız.</string>
+
+<!-- Calendar / Reminders / etc — add as needed -->
+
+<!-- Bluetooth (iOS 13+) -->
+<key>NSBluetoothAlwaysUsageDescription</key>
+<string>Yakındaki cihazlara bağlanabilmek için Bluetooth izni gerekir.</string>
+
+<!-- Face ID / biometrics -->
+<key>NSFaceIDUsageDescription</key>
+<string>Hesabını biyometrik ile hızlı doğrulamak için Face ID kullanırız.</string>
+
+<!-- Tracking (ATT) — see `ios-att-prompt` skill -->
+<!-- <key>NSUserTrackingUsageDescription</key> ... -->
+
+<!--
+Android side (AndroidManifest.xml):
+  <uses-permission android:name="android.permission.CAMERA"/>
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <uses-permission android:name="android.permission.READ_CONTACTS"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  Android 13+: READ_MEDIA_IMAGES / READ_MEDIA_VIDEO / READ_MEDIA_AUDIO
+  Android 14+ partial: READ_MEDIA_VISUAL_USER_SELECTED
+-->
