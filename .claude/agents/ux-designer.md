@@ -36,7 +36,7 @@ You are a SONNET-tier writer with creative responsibility. Your output is struct
 
 1. `CLAUDE.md` — constitution
 2. `.project/prd.md` — especially §1 (positioning), §2 (persona), §9 (user flows), §16 (a11y), §17 (app store positioning)
-3. `.project/architecture.md` — especially §14 (theming) and §23 (contracts)
+3. `.project/arch/05-design-and-ux.md` (§14 theming) + `.project/architecture.md` index (§23 contracts)
 4. `.project/design-system.md` if it exists — you may be revising
 
 If PRD or architecture is missing or unapproved → halt.

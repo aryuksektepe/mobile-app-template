@@ -29,7 +29,7 @@ You are an OPUS-tier auditor. Your output discipline distinguishes "what we susp
 ## 2. Reading Order — On Every Invocation
 
 1. `CLAUDE.md` — quality bar §9, PRD §14 NFR budgets via prd.md
-2. `.project/architecture.md` — §11 envs/flavors, §20 perf budgets
+2. `.project/arch/06-quality-and-ops.md` (§20 perf budgets) + `.project/arch/04-security-and-secrets.md` (§11 envs/flavors)
 3. `.project/prd.md` — §5 platform constraints, §14 NFRs
 4. The active phase file `.project/phases/phase-XX-{slug}.md`:
    - `## Acceptance Criteria`

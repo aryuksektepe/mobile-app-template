@@ -31,11 +31,15 @@ SPEC.loader.exec_module(mod)
 
 def _phase(status="PLANNED", owner="task-planner", missing_section=None,
            extra_frontmatter=""):
-    """Generate a syntactically valid phase file for tests."""
+    """Generate a syntactically valid LIVE phase file for tests.
+
+    Heavy evidence/history sections (Decisions Log, Integration Smoke,
+    Smoke Test Log, Handoff Notes) live in the archive sibling — see _archive().
+    """
     sections = [
-        "## Goal", "## Acceptance Criteria", "## Tasks", "## Decisions Log",
-        "## Skipped Steps", "## Open Questions", "## Integration Smoke",
-        "## Smoke Test Log", "## Handoff Notes",
+        "## Goal", "## Acceptance Criteria", "## Tasks",
+        "## Skipped Steps", "## Open Questions",
+        "## Latest Handoff", "## Evidence & History",
     ]
     if missing_section:
         sections = [s for s in sections if s != missing_section]
@@ -64,6 +68,18 @@ walking_skeleton_invariant: "app builds"
 {body}
 """
     return fm
+
+
+def _archive(missing_section=None):
+    """Generate a valid phase ARCHIVE sibling for tests (no frontmatter)."""
+    sections = [
+        "## Decisions Log", "## Integration Smoke",
+        "## Smoke Test Log", "## Handoff Notes",
+    ]
+    if missing_section:
+        sections = [s for s in sections if s != missing_section]
+    body = "\n\n".join(f"{s}\n\n(content)" for s in sections)
+    return f"# Phase 03 — Test Phase — Archive\n\n{body}\n"
 
 
 # ----- inline-comment stripper -----
@@ -146,10 +162,18 @@ class TestValidatePhase(unittest.TestCase):
         errors = mod.validate_phase(p)
         self.assertEqual(errors, [], f"Expected no errors, got: {errors}")
 
-    def test_missing_decisions_log(self):
-        p = self._write_phase(_phase(missing_section="## Decisions Log"))
+    def test_missing_live_section(self):
+        # Latest Handoff is a required LIVE section (working set).
+        p = self._write_phase(_phase(missing_section="## Latest Handoff"))
         errors = mod.validate_phase(p)
-        self.assertTrue(any("Decisions Log" in e for e in errors))
+        self.assertTrue(any("Latest Handoff" in e for e in errors))
+
+    def test_archived_section_not_required_in_live(self):
+        # Decisions Log lives in the archive now — its absence from the LIVE
+        # file must NOT be flagged by validate_phase.
+        p = self._write_phase(_phase())
+        errors = mod.validate_phase(p)
+        self.assertFalse(any("Decisions Log" in e for e in errors))
 
     def test_invalid_status(self):
         p = self._write_phase(_phase(status="WEIRD_STATE"))
@@ -182,9 +206,17 @@ class TestValidatePhase(unittest.TestCase):
             any("INTEGRATION_SMOKE" in e and "compliance" in e for e in errors)
         )
 
-    def test_missing_integration_smoke_section(self):
-        p = self._write_phase(_phase(missing_section="## Integration Smoke"))
-        errors = mod.validate_phase(p)
+    def test_archive_valid(self):
+        arch = self.tmpdir / "phase-03-test-archive.md"
+        arch.write_text(_archive(), encoding="utf-8")
+        errors = mod.validate_archive(arch)
+        self.assertEqual(errors, [], f"Expected no errors, got: {errors}")
+
+    def test_archive_missing_integration_smoke(self):
+        arch = self.tmpdir / "phase-03-test-archive.md"
+        arch.write_text(_archive(missing_section="## Integration Smoke"),
+                        encoding="utf-8")
+        errors = mod.validate_archive(arch)
         self.assertTrue(any("Integration Smoke" in e for e in errors))
 
 

@@ -145,4 +145,52 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-007 — Token optimization: modular architecture + phase LIVE/ARCHIVE split + model tier routing
+**Date:** 2026-05-26
+**Status:** Accepted (auto-approved per user: "optimizasyonu best practice ile uygula ve kalıcı hale getir")
+
+**Decision:** A user-owned project consuming this pipeline was burning excessive tokens — a third-party analysis attributed the dominant cost to repetitive re-reads of monolithic `architecture.md` (~132 KB), bloated late-phase files (412 KB observed), and uniform Opus/Sonnet routing of agents whose tasks were mechanical. After re-grounding the analysis in this template's actual subagent architecture (each `Task()` call is a separate context window — "merge all reviews into one conversation thread" does NOT apply), apply three structural optimizations, refuse a fourth that violates the constitution:
+
+1. **#3 Model tier routing (applied — risk-free, immediate $ savings).** Frontmatter + self-description updated together for consistency:
+   - `orchestrator` opus → **sonnet** (highest-frequency agent; routing is mechanical; CAVEAT noted in agent text — user may pin back to opus if state-machine drift observed).
+   - `compliance` opus → **sonnet** (checklist-driven mandatory-per-phase; aggressive haiku option rejected for KVKK/GDPR nuance; pin-back path documented).
+   - `feature-chronicler` sonnet → **haiku** (template-driven writing).
+   - `localization` sonnet → **haiku** (mechanical ARB validation).
+   - **Deviation from the user-approved plan: `skill-extractor` stays on opus** (low frequency, but a wrong extraction permanently pollutes the skill index every future coder reads — high downside / low savings; transparent reversal of the original draft).
+
+2. **#1 Phase LIVE+ARCHIVE split (applied — biggest token win on heavy phases).** A phase is now two files:
+   - LIVE `phase-XX-{slug}.md`: frontmatter + Goal + Acceptance Criteria + Tasks + Open Questions + Skipped Steps + **Latest Handoff** + **Evidence & History (archived) pointers** + bounded review verdict blocks. Read by default by every agent.
+   - ARCHIVE `phase-XX-{slug}-archive.md`: Decisions Log + Integration Smoke evidence + Smoke Test Log + full Handoff Notes history. Opened ONLY by the agent producing the evidence, the orchestrator/qa-test-guide at evidence gates, or skill-extractor/audits.
+   - CLAUDE.md §5 (directory), §6 (body sections — rewritten with the split + binding read/write rule), §11 (LIVE is the default for "current phase file"), §12 (handoff = full to archive + latest pointer in live) updated.
+   - `orchestrator.md` §2 (reading order), dispatch table (LIVE+ARCHIVE note), INTEGRATION_SMOKE gate cell (evidence is in archive) updated.
+   - `task-planner.md` template now scaffolds both files (§B LIVE + §B2 ARCHIVE). **Additive only** — existing LIVE sections were NOT deleted (per user rejection of the destructive surgical edit); the new live sections (Latest Handoff + Evidence & History) were added and the archive template introduced. §6's binding read/write rule resolves any ambiguity in agents' favor of the archive for evidence.
+   - **Hook updated.** `.claude/hooks/validate-phase-state.py`: `REQUIRED_BODY_SECTIONS` split into `REQUIRED_LIVE_SECTIONS` (Goal/AC/Tasks/Skipped/Open Q/Latest Handoff/Evidence & History) + `REQUIRED_ARCHIVE_SECTIONS` (Decisions Log/Integration Smoke/Smoke Test Log/Handoff Notes); new `validate_archive()` function; main loop skips `*-archive.md` from state-file validation and validates archive sections only when the archive exists. Test suite updated (`_archive()` helper, repurposed missing-section tests, added archive valid/missing tests). All 36 tests green.
+
+3. **#2 Modular architecture (applied — second-biggest token win, broadest blast radius).** `.project/architecture.md` becomes a lean INDEX (frontmatter incl. `triggers_api_design` + Tech Stack summary + Contents TOC + Open Questions + PRD Revisions + ADR Log + Contracts appendix). The 23 canonical content sections distribute across six slice files under `.project/arch/`:
+   - `01-foundation.md` (§1 style, §2 stack, §3 layers, §4 folders)
+   - `02-implementation.md` (§5 state, §6 nav, §7 data, §8 networking, §10 errors, §13 codegen)
+   - `03-data-and-storage.md` (§9 Drift)
+   - `04-security-and-secrets.md` (§11 envs/flavors, §12 secrets)
+   - `05-design-and-ux.md` (§14 theming, §15 assets/fonts)
+   - `06-quality-and-ops.md` (§16 logging, §17 testing, §18 lint, §19 CI, §20 perf)
+   - `architect.md` updated: intro + §2 reading order + §3 workflow + §4 output + §5 doc-completeness rule + new §5a Output File Layout map. Append-mode now edits the specific slice + bumps the index ADR Log.
+   - CLAUDE.md §11 carries the binding **slice-ownership table** (consumer-side single source of truth) and a "Write authority" line: ONLY `architect` writes `architecture.md` + `arch/*`; every other agent is read-only on them (globally extends the existing "do not edit architecture.md" prohibition to the full `arch/` tree without 23 per-agent edits).
+   - **Eight consumer agents' reading-order lines repointed** to slice files instead of stale `architecture.md §X` references (coder, security-reviewer, performance-reviewer, db-migration, test-writer, code-reviewer, app-bootstrap, ux-designer), plus two misc references (`coder.md` §4 folder check → `arch/01-foundation.md §4`; `test-writer.md` Alchemist check → `arch/06-quality-and-ops.md §17`). One orchestrator dispatch row updated (BOOTSTRAPPING folder-layout check now points to `arch/01-foundation.md` with on-demand-load note).
+
+**NOT adopted (rejected on constitution grounds):**
+- **#4 "Merge security + performance + compliance into one `quality-gate` agent"** — would cut their context-reads ~3× but directly violates CLAUDE.md §1 "no step skipped silently" and §3/§9 "security + performance + compliance reviews are MANDATORY per phase" plus loses the per-domain checklist/severity rubric each reviewer carries. The same token win is achieved by #1+#2 without breaking the constitution.
+- **Prompt-caching-as-strategy** — the third-party analysis ranked "wrap all reviewers in one conversation thread to keep cache warm" as the #1 lever; this is mis-described for this template. Each subagent is a separate `Task()` call with its own context window; there is no thread to share. Claude Code's automatic 5-minute TTL cache helps within back-to-back invocations but isn't a directly-controllable lever here. The mechanism reduces to "read less per agent" — which is exactly what #1+#2 do.
+
+**Reason:** Per token model (assumptions stated in the planning response): ~12 agent invocations/phase × ~90 K mandatory-read tokens/agent (CLAUDE.md + architecture.md + phase file) ≈ ~1.08 M input tokens/phase from re-reads alone. #1+#2 cut this by ~60–75 % (architecture.md 132 KB → ~5 KB index + ~10–20 KB per loaded slice; late phase 50–103 K → ~2–8 K LIVE). #3 multiplies the saving on light agents by ~5–15× on $/token.
+
+**Consequences:**
+- **Sequenced rollout the user can observe** — #3 is risk-free and effective immediately on the next agent invocation; #1+#2 take effect when `task-planner` and `architect` produce new outputs (next phase / next ADR).
+- **Modular architecture changes the architect contract** — append-mode now edits the specific slice + bumps the index ADR Log, never duplicates content across slices. Slice files are append-only at the section level the same way the monolith was.
+- **One downside accepted by user instruction**: in the LIVE phase template the existing 4 archive-bound section headings (`## Decisions Log`, `## Integration Smoke`, `## Smoke Test Log`, `## Handoff Notes`) remain present as empty stubs because the destructive surgical removal was rejected mid-edit. The §6 binding read/write rule + orchestrator's LIVE+ARCHIVE note resolve writes to the archive globally, so this is cosmetic, not functional. A follow-up phase may clean up the stubs once the convention has been observed in practice.
+- **Monitor `orchestrator` on sonnet.** This is the agent the whole pipeline's integrity rides on (state-machine enforcement, trust-but-verify re-checks). If transitions ever drift, pin it back to opus via frontmatter (single-line change, documented in the agent file).
+- **Monitor `compliance` on sonnet** on the first high-stakes (fintech/health/children's data) project that runs through the pipeline; same pin-back path.
+- **GitHub push deferred (standing user instruction).** Local working tree only — monthly limit exhausted; bulk push next month when the limit resets. Future push must include this ADR's net commit so the optimization lands atomically with its documentation.
+
+---
+
 (Future ADRs added here.)

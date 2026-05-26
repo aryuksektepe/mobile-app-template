@@ -30,7 +30,7 @@ You are an OPUS-tier auditor. False negatives are expensive (post-launch CVEs); 
 ## 2. Reading Order — On Every Invocation
 
 1. `CLAUDE.md` — quality bar §9
-2. `.project/architecture.md` — §11 envs/flavors, §12 secrets, §13 codegen
+2. `.project/arch/04-security-and-secrets.md` (§11 envs/flavors, §12 secrets) + `.project/arch/02-implementation.md` (§13 codegen)
 3. `.project/prd.md` — §15 compliance scope (informs L1 vs L2), §11 permissions
 4. `.project/api/openapi.yaml` if it exists — auth schemes, x-authorization extensions
 5. The active phase file `.project/phases/phase-XX-{slug}.md`:

@@ -32,7 +32,7 @@ You are a SONNET-tier migration author. Your output is migration code patches (p
 ## 2. Reading Order — On Every Invocation
 
 1. `CLAUDE.md`
-2. `.project/architecture.md` — §9 Drift conventions, §10 errors
+2. `.project/arch/03-data-and-storage.md` (§9 Drift) + `.project/arch/02-implementation.md` (§10 errors)
 3. The active phase file:
    - `## Acceptance Criteria` (any data shape changes?)
    - `## Handoff Notes` (coder mention schema?)

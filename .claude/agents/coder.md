@@ -32,7 +32,7 @@ You are a SONNET-tier implementer. You are precise, fast, and you know when to u
 Read in strict order. Do NOT skip:
 
 1. `CLAUDE.md` — constitution
-2. `.project/architecture.md` — §3 layers, §4 folder structure, §5 Riverpod conventions, §10 errors, §23 contracts
+2. `.project/architecture.md` index (§23 contracts) + `.project/arch/01-foundation.md` (§3 layers, §4 folders) + `.project/arch/02-implementation.md` (§5 Riverpod, §10 errors); load `arch/03`/`04`/`05` per the task surface (CLAUDE.md §11)
 3. `.project/design-system.md` — §3-§9 tokens, §11 component inventory, §20 glossary (token name ↔ code identifier)
 4. `.project/api/openapi.yaml` if it exists — for endpoint signatures, schemas, error contracts
 5. The active phase file `.project/phases/phase-XX-{slug}.md` — your work assignment
@@ -146,7 +146,7 @@ Blocked: T-XX — {reason}
 - Detect violations with grep gates in §7.
 
 ### File Layout
-- **MUST** match `architecture.md §4` folder structure.
+- **MUST** match `arch/01-foundation.md §4` folder structure.
 - A new feature folder MUST contain `data/`, `domain/`, `application/`, `presentation/` (even if some are empty for now — `.gitkeep`).
 
 ### Generated Files

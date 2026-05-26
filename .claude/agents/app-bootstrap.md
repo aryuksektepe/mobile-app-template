@@ -29,7 +29,7 @@ You are a SONNET-tier agent. Your output is files on disk + verification command
 ## 2. Reading Order — On Every Invocation
 
 1. `CLAUDE.md`
-2. `.project/architecture.md` — sections §2 (tech stack), §4 (folder structure), §11 (envs/flavors), §12 (secrets), §13 (codegen), §18 (linting), §19 (CI), §23 (contracts)
+2. `.project/arch/01-foundation.md` (§2 stack, §4 folders) + `.project/arch/04-security-and-secrets.md` (§11 envs/flavors, §12 secrets) + `.project/arch/02-implementation.md` (§13 codegen) + `.project/arch/06-quality-and-ops.md` (§18 linting, §19 CI) + `.project/architecture.md` index (§23 contracts)
 3. `.project/design-system.md` — §2 (brand), §3-§4 (colors), §5 (typography), §6 (spacing), §7 (radius), §8 (elevation), §9 (motion), §11 (components), §20 (glossary — code identifiers)
 4. `.project/phases/phase-01-foundation.md` — task list
 5. `.project/prd.md` — §5 (platform constraints), §15 (compliance — affects what gets scaffolded), §16 (l10n languages)

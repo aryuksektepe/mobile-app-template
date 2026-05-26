@@ -18,8 +18,13 @@ Validation rules (from CLAUDE.md):
   - status must be one of the valid pipeline states
   - owner_agent must be one of the known 23 agents
   - owner_agent must match what is allowed for the current status
-  - Required body sections must exist (Goal, Acceptance Criteria, Tasks,
-    Decisions Log, Skipped Steps, Open Questions, Smoke Test Log, Handoff Notes)
+  - LIVE phase file (phase-XX-{slug}.md) must have the working-set sections
+    (Goal, Acceptance Criteria, Tasks, Skipped Steps, Open Questions,
+    Latest Handoff, Evidence & History). Heavy evidence/history lives in the
+    sibling phase-XX-{slug}-archive.md (CLAUDE.md §6 LIVE+ARCHIVE split).
+  - ARCHIVE file, when it exists, must have Decisions Log, Integration Smoke,
+    Smoke Test Log, Handoff Notes. Archive siblings (*-archive.md) are NOT
+    state files — they are skipped by the frontmatter/status validation.
   - If any state was skipped, ## Skipped Steps must explain why
 """
 
@@ -127,13 +132,20 @@ REQUIRED_FRONTMATTER_KEYS = {
     "walking_skeleton_invariant",
 }
 
-REQUIRED_BODY_SECTIONS = [
+# LIVE phase file (phase-XX-{slug}.md) — the lean working set every agent reads.
+REQUIRED_LIVE_SECTIONS = [
     "## Goal",
     "## Acceptance Criteria",
     "## Tasks",
-    "## Decisions Log",
     "## Skipped Steps",
     "## Open Questions",
+    "## Latest Handoff",
+    "## Evidence & History",
+]
+# ARCHIVE phase file (phase-XX-{slug}-archive.md) — heavy evidence/history.
+# Validated only when the file exists (CLAUDE.md §6 LIVE+ARCHIVE split).
+REQUIRED_ARCHIVE_SECTIONS = [
+    "## Decisions Log",
     "## Integration Smoke",
     "## Smoke Test Log",
     "## Handoff Notes",
@@ -246,10 +258,25 @@ def validate_phase(path: Path) -> list[str]:
         )
 
     body = text[FRONTMATTER_RE.match(text).end():] if FRONTMATTER_RE.match(text) else ""
-    for section in REQUIRED_BODY_SECTIONS:
+    for section in REQUIRED_LIVE_SECTIONS:
         if section not in body:
             errors.append(f"{path.name}: gerekli bölüm eksik: '{section}'")
 
+    return errors
+
+
+def validate_archive(path: Path) -> list[str]:
+    """Validate a phase's archive sibling (phase-XX-{slug}-archive.md).
+
+    The archive holds heavy evidence/history (CLAUDE.md §6 LIVE+ARCHIVE split).
+    It is NOT a state file — no frontmatter/status/owner checks, only that its
+    required evidence sections are present.
+    """
+    errors: list[str] = []
+    text = path.read_text(encoding="utf-8")
+    for section in REQUIRED_ARCHIVE_SECTIONS:
+        if section not in text:
+            errors.append(f"{path.name}: gerekli arşiv bölümü eksik: '{section}'")
     return errors
 
 
@@ -358,6 +385,8 @@ def main() -> int:
         return 0
 
     for phase_file in sorted(phases_dir.glob("phase-*.md")):
+        if phase_file.name.endswith("-archive.md"):
+            continue  # archive sibling — not a state file; validated with its live phase
         text = phase_file.read_text(encoding="utf-8")
         fm = parse_frontmatter(text)
         if fm is None:
@@ -366,6 +395,9 @@ def main() -> int:
         if fm.get("status") == "DONE":
             continue
         all_errors.extend(validate_phase(phase_file))
+        archive = phase_file.with_name(f"{phase_file.stem}-archive.md")
+        if archive.exists():
+            all_errors.extend(validate_archive(archive))
 
     if not all_errors:
         return 0

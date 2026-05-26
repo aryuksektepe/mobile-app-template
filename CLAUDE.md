@@ -141,7 +141,14 @@ mobile-app-development-templates/
 ├── .project/
 │   ├── README.md            # what every file in here is for
 │   ├── prd.md               # product requirements (product-analyst)
-│   ├── architecture.md      # tech decisions (architect)
+│   ├── architecture.md      # LEAN INDEX: frontmatter + TOC + stack summary + ADR log (architect)
+│   ├── arch/                # modular architecture slices — agents read only their slice (architect)
+│   │   ├── 01-foundation.md         # §1 style, §2 stack, §3 layers, §4 folders
+│   │   ├── 02-implementation.md     # §5 state, §6 nav, §7 data, §8 networking, §10 errors, §13 codegen
+│   │   ├── 03-data-and-storage.md   # §9 Drift local DB
+│   │   ├── 04-security-and-secrets.md  # §11 envs/flavors, §12 secrets
+│   │   ├── 05-design-and-ux.md      # §14 theming, §15 assets/fonts
+│   │   └── 06-quality-and-ops.md    # §16 logging, §17 testing, §18 lint, §19 CI/CD, §20 perf budgets
 │   ├── design-system.md     # colors, typography, components (ux-designer)
 │   ├── layouts.md           # text-described per-screen layouts (ux-designer)
 │   ├── features.md          # user-facing features, marketing-ready (feature-chronicler)
@@ -153,7 +160,8 @@ mobile-app-development-templates/
 │   ├── handoffs.md          # JSONL append-only inter-agent log
 │   ├── phases/
 │   │   ├── INDEX.md         # all phases + status board
-│   │   └── phase-XX-{slug}.md  # one file per phase (task-planner)
+│   │   ├── phase-XX-{slug}.md          # LIVE working set: Goal/AC/Tasks/Open Q/Skipped/Latest Handoff (≤~8KB)
+│   │   └── phase-XX-{slug}-archive.md  # heavy evidence + history (Decisions/Integration Smoke/Smoke Log/Handoff history)
 │   ├── api/                 # OpenAPI spec — only if custom backend (api-design)
 │   ├── references/          # external rule docs
 │   │   ├── appstore-guidelines.md
@@ -209,17 +217,30 @@ user_approved: false          # computed by orchestrator on USER_APPROVAL gate
 - `last_updated`: bumps on ANY frontmatter change (orchestrator on every state transition, any agent that edits frontmatter).
 - `last_reconciled`: bumps ONLY by `task-planner` when it re-validates phase scope against current PRD + architecture + design-system. This happens (a) on initial phase write, (b) on explicit `/replan` invocation, (c) when PRD/architecture has changed since last reconcile and task-planner is asked to verify the phase still maps cleanly. Other agents MUST NOT touch this field.
 
-### Phase file body sections (REQUIRED in this order)
+### Phase file body sections — LIVE + ARCHIVE split (token discipline)
+
+A phase is **two files** so that the 12+ agent invocations per phase read a small working set, not an ever-growing evidence log. (Rationale + savings: decisions.md ADR-007.)
+
+**LIVE file `phase-XX-{slug}.md`** — the working set every agent reads. Keep it lean — bounded reviewer verdict blocks stay here; all UNBOUNDED evidence/logs/history go to the archive. Sections, in this order:
 
 1. `## Goal`
 2. `## Acceptance Criteria` (checklist)
 3. `## Tasks` (checklist with owner agent + status)
-4. `## Decisions Log` (date-stamped)
-5. `## Skipped Steps` (with reasons)
-6. `## Open Questions / Blockers`
-7. `## Integration Smoke` (build + boot + real-backend e2e + contract + reachability evidence — gates `INTEGRATION_SMOKE`)
-8. `## Smoke Test Log` (filled by qa-test-guide)
-9. `## Handoff Notes` (each agent leaves notes for the next)
+4. `## Open Questions / Blockers`
+5. `## Skipped Steps` (with reasons — short; policy-relevant so it stays live)
+6. `## Latest Handoff` (ONLY the most recent handoff block — full chronological history lives in the archive)
+7. `## Evidence & History (archived)` — one-line pointers into the archive, e.g. `Integration Smoke → phase-XX-{slug}-archive.md#integration-smoke (PASS, 2026-05-26)`
+
+Plus the per-phase **review verdict blocks** — `## Code Review`, `## Bug Hunt`, `## Security Review`, `## Performance Review`, `## Compliance Check` — stay LIVE (bounded, verdict-focused; the next reviewer and the orchestrator's gate checks read them). If a review needs a bulky reproduction log or code dump, that bulk goes to the archive with a one-line pointer in the live block.
+
+**ARCHIVE file `phase-XX-{slug}-archive.md`** — append-only heavy content. Created lazily on first heavy write. Sections:
+
+- `## Decisions Log` (date-stamped, full history)
+- `## Integration Smoke` (build + boot + real-backend e2e + contract + reachability evidence — **gates `INTEGRATION_SMOKE`**)
+- `## Smoke Test Log` (filled by qa-test-guide)
+- `## Handoff Notes` (full chronological history; each agent appends here AND refreshes `## Latest Handoff` in the live file)
+
+**Read/write rule (BINDING):** Agents read the LIVE file by default. The archive is opened ONLY by: (a) the agent producing that evidence (writes to archive), (b) the orchestrator/qa-test-guide when verifying an evidence gate (`INTEGRATION_SMOKE` → archive `## Integration Smoke`; `QA_SMOKE_TEST` → archive `## Smoke Test Log`), (c) skill-extractor and historical audits. When any rule in this file says "the phase file's `## Integration Smoke` / `## Smoke Test Log` / `## Handoff Notes` / `## Decisions Log`", it means **the archive file's** section. Frontmatter always lives in the LIVE file.
 
 ### `phases/INDEX.md` format
 
@@ -399,10 +420,32 @@ Every agent must enforce these baselines. Violations block progression.
 
 When any agent starts, it MUST read in this order:
 1. `CLAUDE.md` (this file)
-2. `.project/architecture.md`
-3. The current phase file
-4. Any agent-specific files referenced in its own definition
-5. `.claude/skills/INDEX.md` (coder only — but others may reference)
+2. `.project/architecture.md` — this is now a **lean INDEX** (TOC + stack summary + ADR log), NOT the full spec. Do NOT read the whole `arch/` tree.
+3. **Only the `arch/` slice(s) your role owns** (table below). Load another slice **on demand** if a task genuinely needs it — never read all slices "to be safe".
+4. The current phase file — the **LIVE** `phase-XX-{slug}.md` only. Open `phase-XX-{slug}-archive.md` ONLY when you must verify/append evidence (see §6 read/write rule).
+5. Any agent-specific files referenced in its own definition
+6. `.claude/skills/INDEX.md` (coder reads FIRST per §7; others may reference)
+
+### Architecture slice ownership (single source of truth)
+
+| Agent | Primary `arch/` slice(s) beyond the index |
+|---|---|
+| `coder` | `02-implementation` + load `03`/`04`/`05` per the task's surface |
+| `test-writer` | `06-quality-and-ops` + the slice(s) under test |
+| `code-reviewer`, `bug-hunter` | index + the slice(s) the phase touched |
+| `db-migration` | `03-data-and-storage` |
+| `security-reviewer` | `04-security-and-secrets` (+ `02` for networking) |
+| `compliance` | `04-security-and-secrets` |
+| `performance-reviewer` | `06-quality-and-ops` |
+| `ux-designer` | `05-design-and-ux` (+ `02` for navigation) |
+| `app-bootstrap` | `01-foundation` + `04-security-and-secrets` + `06-quality-and-ops` |
+| `crash-monitor`, `release-manager` | `06-quality-and-ops` (+ `04` for envs/secrets) |
+| `api-design` | `02-implementation` (networking) |
+| `task-planner` | index + load slices as scope demands |
+| `orchestrator`, `feature-chronicler`, `aso`, `localization`, `product-analyst` | index only (load a slice only if a specific check needs it) |
+| `architect` | producer — writes the index + all slices (see architect.md) |
+
+**Write authority (BINDING):** ONLY `architect` writes `.project/architecture.md` and `.project/arch/*` (post-approval changes go through ADRs — see architect.md). Every other agent is READ-ONLY on the index and all slices, same as the existing "do not edit architecture.md" rule in each agent's prohibitions — it now covers the whole `arch/` tree.
 
 ---
 
@@ -411,7 +454,7 @@ When any agent starts, it MUST read in this order:
 - All agent responses to the user MUST be in **Turkish** by default (this user prefers Turkish). Code, identifiers, file names stay in English.
 - Be concise. No filler. Lead with the result.
 - When asking for approval, give the user a clear yes/no question.
-- When handing off to another agent, write to the phase file's `## Handoff Notes` — do NOT bury context in chat-only output.
+- When handing off to another agent: append the full handoff to the **archive** file's `## Handoff Notes` AND refresh the **live** file's `## Latest Handoff` block (most recent only) — do NOT bury context in chat-only output. (See §6 LIVE+ARCHIVE split.)
 
 ---
 

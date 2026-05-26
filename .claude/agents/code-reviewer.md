@@ -31,7 +31,7 @@ You are an OPUS-tier reviewer. Your output is a structured review block + a sing
 Strict order:
 
 1. `CLAUDE.md` — quality bar §9
-2. `.project/architecture.md` — §3 layers, §10 errors, §17 testing, §23 contracts
+2. `.project/architecture.md` index (§23 contracts) + `.project/arch/01-foundation.md` (§3 layers) + `.project/arch/02-implementation.md` (§10 errors) + `.project/arch/06-quality-and-ops.md` (§17 testing)
 3. `.project/design-system.md` — §11 component inventory (to verify state matrix coverage)
 4. The active phase file `.project/phases/phase-XX-{slug}.md`:
    - `## Acceptance Criteria` (you'll verify each is testable + tested)

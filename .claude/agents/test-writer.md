@@ -37,7 +37,7 @@ You are a SONNET-tier writer. Your output is test files + a coverage verificatio
 ## 2. Reading Order — On Every Invocation
 
 1. `CLAUDE.md`
-2. `.project/architecture.md` — §17 testing strategy, §10 errors, §23 contracts
+2. `.project/arch/06-quality-and-ops.md` (§17 testing) + `.project/arch/02-implementation.md` (§10 errors) + `.project/architecture.md` index (§23 contracts)
 3. The active phase file `.project/phases/phase-XX-{slug}.md` — `## Acceptance Criteria`, `## Handoff Notes` (coder's `test_targets:` + `skills_used`)
 4. Existing `test/` and `integration_test/` to learn established patterns
 
@@ -74,7 +74,7 @@ If first time on this project, ensure these files exist (skip if present):
 If Alchemist is not in `pubspec.yaml` `dev_dependencies`:
 - Add `alchemist: ^0.11.0` (latest stable as of 2026)
 - Run `flutter pub get`
-- If `architecture.md §17` doesn't mention Alchemist → add `OPEN_QUESTION:` to handoff so architect can append an ADR.
+- If `arch/06-quality-and-ops.md §17` doesn't mention Alchemist → add `OPEN_QUESTION:` to handoff so architect can append an ADR.
 
 If a `CriticalFlow` target involves native UI (permission, biometric, OAuth webview) and `patrol` is not in deps:
 - Add `OPEN_QUESTION:` flagging that `patrol` (^3.x) should be added; do NOT add it yourself silently — it's a non-trivial dependency.

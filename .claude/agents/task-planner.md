@@ -189,7 +189,9 @@ Document every conditionally-skipped step here with reason:
 {ISO date} — by task-planner. Update after every replan.
 ```
 
-### B. `.project/phases/phase-XX-{slug}.md`
+### B. LIVE file `.project/phases/phase-XX-{slug}.md`
+
+The working set every agent reads — keep it lean (CLAUDE.md §6 LIVE+ARCHIVE split). Frontmatter + the live sections below. Heavy evidence/logs/history go to the sibling `-archive.md` (template in §B2). Scaffold BOTH files when you create a phase.
 
 ```markdown
 ---
@@ -292,9 +294,23 @@ Non-blocking risks that may need architect or user attention later. Distinct fro
 
 ## Handoff Notes
 
-(Each agent appends a short note here when finishing their step. Newest at bottom. Format: `[YYYY-MM-DD agent-name] note`.)
+> Per CLAUDE.md §6 LIVE+ARCHIVE split: the FULL chronological handoff history lives in `phase-XX-{slug}-archive.md#handoff-notes`. Keep only a one-line status pointer here; the LIVE summary is the `## Latest Handoff` block below. (This section heading is kept for backwards-compatibility with any agent that still writes here — it MUST eventually be the archive.)
 
-- (empty)
+- → see archive
+
+## Latest Handoff
+
+(Only the most recent handoff block. Full chronological history lives in the archive. Format: `[YYYY-MM-DD agent-name] note`.)
+
+- (empty — first set by the first agent to run)
+
+## Evidence & History (archived)
+
+Pointers into `phase-XX-{slug}-archive.md` (kept current as evidence lands):
+- Decisions Log → `#decisions-log`
+- Integration Smoke → `#integration-smoke` (status: pending)
+- Smoke Test Log → `#smoke-test-log` (status: pending)
+- Handoff Notes (full history) → `#handoff-notes`
 
 ---
 
@@ -326,6 +342,46 @@ flutter test test/widget/features/onboarding/
 flutter test integration_test/onboarding_flow_test.dart
 flutter gen-l10n
 ```
+```
+
+### B2. ARCHIVE file `.project/phases/phase-XX-{slug}-archive.md`
+
+Append-only heavy content (CLAUDE.md §6 LIVE+ARCHIVE split). Scaffold this file at plan time alongside the LIVE file. NOT read by default — opened only to verify/append evidence (orchestrator at the INTEGRATION_SMOKE gate, qa-test-guide at QA_SMOKE_TEST, skill-extractor on history, audits).
+
+```markdown
+# Phase 03 — Onboarding & Permissions — Archive
+
+> Heavy evidence + history for `phase-03-onboarding-permissions.md`. See that LIVE file for Goal / Acceptance Criteria / Tasks. Per CLAUDE.md §6, this archive is the canonical home for Decisions Log, Integration Smoke evidence, Smoke Test Log, and full Handoff Notes history.
+
+## Decisions Log
+
+Date-stamped decisions made WITHIN this phase (not project-wide — those go to `.project/decisions.md`). Phase-local decisions: split tasks, deferred sub-features, library version pin, etc.
+
+Format: `- {YYYY-MM-DD} [{agent}] {decision} — {one-sentence rationale}`
+
+- {YYYY-MM-DD} [task-planner] Initial breakdown: {N} tasks, vertical slice ends with {milestone}.
+- (further entries appended by downstream agents — coder, code-reviewer, etc.)
+
+## Integration Smoke
+
+(Filled at the `INTEGRATION_SMOKE` gate by `coder` / `app-bootstrap`. Required execution evidence — the orchestrator will not advance to COMPLIANCE_CHECK without ALL of it, CLAUDE.md §3:)
+
+- Build log tail (exit 0) per flavor: `flutter build {dev,staging,prod} --debug` → (pending)
+- iOS build (exit 0): `flutter build ios --no-codesign` → (pending)
+- Boot: `BOOT_OK` marker + splash → first real screen, no rebuild/dispose storm (`integration_test/boot_smoke_test.dart`) → (pending PASS)
+- Per-FR non-mocked e2e vs real backend — HTTP trace (Kong/proxy log) + DB row evidence pasted → (pending PASS)
+- Every new Edge fn/RPC/migration applied to real local stack + ≥1 authenticated 2xx call → (pending)
+- Every new screen: executed tap-path from PRD entry point → (pending)
+
+## Smoke Test Log
+
+(Filled by `qa-test-guide` after CODE_REVIEW + SECURITY_REVIEW + PERFORMANCE_REVIEW + INTEGRATION_SMOKE + COMPLIANCE_CHECK pass.)
+
+## Handoff Notes
+
+(Full chronological history. Each agent appends here when finishing their step AND refreshes `## Latest Handoff` in the LIVE file. Newest at bottom. Format: `[YYYY-MM-DD agent-name] note`.)
+
+- (empty)
 ```
 
 ---
