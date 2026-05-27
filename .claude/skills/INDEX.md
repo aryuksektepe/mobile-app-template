@@ -3,8 +3,8 @@
 > **coder ZORUNLU bunu okumalı.** Her task için: tokenize → score against `Triggers` → match → open SKILL.md → follow verbatim.
 > Match yoksa: implement from scratch, slug'ı phase frontmatter'da `skills_to_extract:`'e ekle.
 
-**Last updated:** 2026-05-26
-**Total skills:** 42 pre-seeded, 0 battle-tested (plus `_example-skill-template` for reference)
+**Last updated:** 2026-05-27
+**Total skills:** 42 pre-seeded, 1 battle-tested (plus `_example-skill-template` for reference)
 
 > **Validation status legend:**
 > - `pre-seeded` — written from research, NOT yet validated in a real project. Treat as ADAPT not VERBATIM. Append findings to skill's pitfalls.md after first use.
@@ -126,6 +126,7 @@
 | [`supabase-progress-aggregation-trigger`](supabase-progress-aggregation-trigger/SKILL.md) | Client appends events → server trigger/RPC/cron rolls up; else totals/streaks stay zero | progress_events, aggregation, rollup, streak zero, totals not updating, server-side writer, postgres trigger | ios, android | 2026-05-16 | pre-seeded |
 | [`supabase-functions-client-contract-parity`](supabase-functions-client-contract-parity/SKILL.md) | Client↔Edge HTTP method + body field-name parity. Fixes POST-vs-GET, `otp_token` prod-dead bugs | functions.invoke, edge function contract, POST vs GET, otp_token, body field mismatch, req.method 405 | ios, android | 2026-05-16 | pre-seeded |
 | [`supabase-local-verify-jwt-es256-hs256`](supabase-local-verify-jwt-es256-hs256/SKILL.md) | Local stack runbook — 401 verify_jwt ES256↔HS256, db-reset FK trap, realtime publication, CORS-preflight | edge function 401, verify_jwt, ES256 HS256, local supabase 401, JWT algorithm mismatch, local stack runbook | ios, android | 2026-05-16 | pre-seeded |
+| [`scoping-column-end-to-end-rollout`](scoping-column-end-to-end-rollout/SKILL.md) | Add a new scoping/tenant FK column (well_id, tenant_id, org_id, family_id, household_id) end-to-end through 8 layers (Supabase migration + backfill + trigger + NOT NULL + DTO `known` set + entity + mapper + Drift) without silent NULL writes, silent DTO drops, or saturated derived-VIEW aggregates | scoping column, tenant_id, well_id, org_id, household_id, family_id, workspace_id, multi-tenant migration, add fk column, parent scoping, retrofit scoping, derived view aggregate, mastery view, aggregate view modules_total | ios, android | 2026-05-26 | battle-tested |
 
 ## Updates & Lifecycle
 
@@ -205,6 +206,11 @@ webview-wrapper                   (independent)
 in-app-review-prompt              (independent)
 splash-and-launcher-icon          (independent)
 freezed-json-serializable         (independent foundation)
+
+scoping-column-end-to-end-rollout (battle-tested standalone; pairs naturally with
+                                    drift-schema-migrations + supabase-rls-client-contract
+                                    + supabase-progress-aggregation-trigger when adding a
+                                    multi-tenant FK column to event-driven tables)
 ```
 
 **Recommended Phase 01 order** (foundations first):
