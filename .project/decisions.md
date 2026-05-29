@@ -245,4 +245,80 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-009 — Subo v1.2 pipeline knowledge integration (3 new skills + 4 enhanced + 2 agent updates)
+**Date:** 2026-05-27
+**Status:** Accepted
+
+**Decision:** Bir prod Flutter+Supabase uygulamasının (Subo v1.2 release) `+pipeline-knowledge/` klasöründeki 6 öğrenme dosyasını template'e entegre et — yeni skill'ler, mevcut skill pitfalls'larına ekleme, ve iki agent (qa-test-guide + crash-monitor) güncellemesi olarak.
+
+**Concrete changes:**
+
+*Three new skills (additive — `pre-seeded`):*
+- `ios-26-debug-release-only-physical` (DevOps & CI/CD) — iOS 18.4+ Apple `mprotect()` Dart JIT'i reddediyor, fiziksel cihazda DEBUG cold-start crash; release build + `xcrun devicectl install` runbook'u. Pipeline davranışını etkiler: `qa-test-guide` ve INTEGRATION_SMOKE bu cihaz sınıfında release build talimatı verir.
+- `app-lock-pin-biometric` (Compliance & Security) — PIN + biyometrik in-app lock; PBKDF2-HMAC-SHA256 120k iter (OWASP 2023), constant-time compare, exponential lockout, **kritik lifecycle ayrımı** `paused→resumed` (gerçek bg) vs `inactive→resumed` (Face ID dialog / control center / notif drawer — re-lock TETİKLEMEZ). Subo'da biyometrik döngüsü bug'ı bu mixin ile çözüldü.
+- `intl-currency-locale-resolve` (Forms, UI & Layout) — Dart `intl` kısa locale fallback bug'ı (`'tr'` → `'TRY 79.99'`; doğru `'tr_TR'` → `'₺79,99'`); server-client format parity. Çift bildirim format mismatch'inin tipik nedeni.
+
+*Four existing skills enhanced (pitfalls.md):*
+- `notifications-fcm` 14→22 entries: apns-collapse-id + Android `notification.tag` ile OS-level dedup (hibrit local+FCM çift bildirim fix'i), iOS `UNUserNotificationCenter willPresent` delegate (foreground'da banner için ZORUNLU), `flutter_local_notifications.initialize()`'ı background isolate'tan çağırma deadlock'u (#1730), `flutter_timezone` init zorunluluğu, geçmiş `targetDt` silent skip guard'ı. İki yeni snippet eklendi (`AppDelegate.willPresent.snippet.swift`, `edge-fn-dedup-buildFcmMessage.ts`).
+- `auth-apple-signin` 18→22 entries: Apple Private Relay (`@privaterelay.appleid.com`) için `auth_email` + `display_name` + opsiyonel `contact_email` UX pattern'i (Spotify/Notion/Linear yaklaşımı), Apple `givenName`+`familyName` only-on-first-sign-in race condition mitigation, **Supabase** `signInWithIdToken` Apple nonce dance (Firebase ile aynı), relay-email bounce risk dokümantasyonu.
+- `auth-google-signin` 17→20 entries: **Supabase** "Skip nonce checks" toggle'ı + cache nedeniyle force-refresh trick (OFF→Save→ON→Save→bekle), iOS `GIDClientID` + `GIDServerClientID` Info.plist zorunluluğu (eksikse `[GIDSignIn signInWithOptions:]` NSException crash), `accessToken` Supabase ile birlikte gönderme zorunluluğu.
+- `flutter-build-boot-gate` + `ios-android-hardening`: iOS 26 release-only fiziksel cihaz pitfall'u (P7 / #11), Flutter 3.44 SPM auto-integration FlutterFire çakışması (P8 / #12), CocoaPods UTF-8 encoding fix (#13).
+
+*Two agent updates:*
+- `qa-test-guide.md` — Iron Rule #9 eklendi (iOS 18.4+ fiziksel cihaz → release build mandate); preamble template'inde `Build modu (BINDING)` bölümü zorunlu artık (debug/release tablosu + iOS 26 talimatı + skill referansı).
+- `crash-monitor.md` — yeni §8.1 **iOS `.ips` Crash Log Retrieval (operator runbook)** eklendi: cihazdan `.ips` alma (Settings → Privacy → Analytics Data), macOS TCC sandbox workaround (Finder → /tmp), python3 ile parse + threading info, yaygın imza tanımları (EXC_BAD_ACCESS+VSyncClient = iOS 26 mprotect, vb.).
+
+*INDEX.md:*
+- 3 yeni satır eklendi, Total 42→45 pre-seeded güncellendi.
+- Dependency graph genişletildi.
+
+**Out of scope (kasıtlı — `+pipeline-knowledge/`'de var ama template'e dahil edilmedi):**
+- Riverpod modal `Consumer` wrap pattern'i, `Timer.periodic` countdown ticker, day-overflow `DateTime` guard, SharedPreferences user-scoped key — yeterince genel Flutter pattern'leri, kendi skill'lerini hak etmiyorlar; ihtiyaç olduğu yerde mevcut skill'lerin pitfalls.md'sine eklenebilir (gelecekte organik).
+- Git commit convention'ları, pre-commit hook'ları, dart-define-from-file workflow — proje-spesifik bootstrap, agent davranışını değiştirmez.
+
+**Reason:** Subo v1.2 bir release döngüsü boyunca 9 bug + 3 büyük feature'da pattern'ler keşfetti. Üçü (iOS 26 JIT, hibrit notification dedup, Supabase Skip-nonce force-refresh) literatürde yok / yetersiz dokümante; gelecek projelerde aynı kayıpları yaşamamak için template'e ait olmaları lazım. Token disiplini: yeni skill'ler küçük (SKILL.md + pitfalls.md + sade snippet'ler), pitfalls eklemeleri tablo satırları olarak — INDEX read cost'u +~1KB ≈ ~250 token (kabul edilebilir).
+
+**Consequences:**
+- INDEX.md 45 skill (önceki 42'den). Coder agent read cost'u marjinal artar, discovery hit oranı yükselir.
+- `qa-test-guide` artık iOS 26 fiziksel cihaz testlerinde release build talimatı emit eder (regression önler).
+- `crash-monitor` operator'a `.ips` retrieval runbook'u verir (Crashlytics/Sentry'ye düşmeyen crash'ler için escape hatch).
+- Hepsi `pre-seeded` — ADAPT not VERBATIM; ilk gerçek projede pitfalls.md güncellenir, `last_verified` bump'lanır, ≥2 başarılı kullanımdan sonra `battle-tested` promotion.
+- `+pipeline-knowledge/` klasörü template'e gitmez (kullanıcının notları); template kendi `.claude/skills/` ve `.project/` yapısı üzerinden çalışır. Klasör silinebilir ya da `.gitignore`'a eklenebilir — kullanıcı tercihi.
+
+---
+
+## ADR-010 — Template hijyen + tutarlılık + mekanik guardrail temizliği
+
+**Tarih:** 2026-05-29
+**Karar veren:** user (template baştan-sona denetimi sonrası "hepsini uygula")
+**Bağlam:** Template baştan sona denetlendi (agent/otomasyon katmanı + doküman/skill katmanı + internet best-practice karşılaştırması). Motor sağlam bulundu; biriken doküman driftı, sızmış geliştirme artefaktları ve "söz verilmiş ama diskte yok" parçalar düzeltildi.
+
+**Yapılanlar (Dalga 1 — hijyen & tutarlılık):**
+- Commit'li `__pycache__/*.pyc` `git rm --cached` ile düşürüldü; `.gitignore`'a `__pycache__/` + `*.py[cod]` eklendi (Python hook'lar var, ignore yoktu).
+- `.project/MORNING_REPORT.md` + `TASKS_REPORT.md` silindi — bunlar template'i *inşa ederken* tutulan seans loglarıydı, ürünün parçası değil; her yeni projeye sızıyordu.
+- `.claude-plugin/plugin.json` senkronlandı: 25→46 skill (diskle birebir parite), açıklamada "24 agent"→23, "25 skill"→46.
+- README state diyagramına `INTEGRATION_SMOKE` eklendi (sistemin amiral gemisi gate'i README'de hiç yoktu) + kısa açıklama bloğu.
+- `flutter_secure_storage` skill-arası versiyon çakışması çözüldü: `app-lock-pin-biometric` `^9.2.2`→`^10.1.0` (canonical `secure-storage-tokens` ile hizalı; kullanılan read/write/delete API'si 9→10 değişmedi). Verification notu dürüstçe "10.x cihaz re-verify pending" olarak güncellendi.
+- Sızmış proje isimleri ("Mimirva", "Subo v1.2") shipped skill body'lerinde anonimleştirildi ("a production run / production Bug N"). `subosito/flutter-action` (gerçek GitHub Action) korundu. ADR başlıkları (ADR-006/009) tarihsel kayıt olarak bırakıldı.
+- `_example-skill-template` çelişkisi giderildi: "Delete this directory..." talimatı kaldırıldı, "KEEP — skill-extractor referansı" ile değiştirildi (dizin INDEX'te zaten "koru" diyordu). INDEX "Total skills" satırı 46 olarak netleştirildi.
+- `triggers` YAML stili standartlaştırıldı (`scoping-column` block-style → inline array; tüm skill'ler artık inline).
+
+**Yapılanlar (Dalga 2 — mekanik zorlama):**
+- **Yeni PreToolUse hook `guard-tool-use.py` (16 test, zero-dep)**: CLAUDE.md'nin prose-only prohibition'larını deterministik hale getirdi. `agent_type` payload alanını kullanarak: (1) `architect` dışındaki agent'ları `architecture.md`/`arch/*` yazımından, (2) read-only reviewer'ları (code/bug/security/performance/compliance) production code (`lib`/`test`/`integration_test`/`ios`/`android`) yazımından, (3) orchestrator'ı Bash'ten + production code yazımından mekanik olarak blokluyor. Main/insan seansı (agent_type yok) hiç kısıtlanmıyor. `settings.json`'a `PreToolUse` matcher `Write|Edit|MultiEdit|NotebookEdit|Bash` ile bağlandı. (Best-practice: "CLAUDE.md advisory'dir, hook deterministiktir".)
+- CI dürüstlük düzeltmeleri (`ci.yml`): `backend-integration`'daki `curl ... || true` (asla kırmızı olamayan no-op) kaldırıldı, Edge Function existence-guard'ı ile değiştirildi (fn varsa gerçekten gate'ler, yoksa açıkça atlar). `integration-smoke` iOS dalı artık `xcrun simctl boot` ile **gerçekten** simulator boot ediyor (eskiden sadece `echo` + host'ta test); Android dalı emulator-runner'a taşındı.
+- On-demand `.project/` dizinleri tutarlı hale getirildi: `arch/`, `api/`, `legal/`, `l10n-deltas/`, `perf-snapshots/`, `release-notes/` için `.gitkeep` (eskiden sadece `aso/` + `qa-runs/` vardı). `.project/README.md`'ye `arch/` satırı eklendi. CLAUDE.md §11'e "arch slice'ları yoksa atla, dead-path değil — architect post-approval üretir" guard notu eklendi.
+
+**Yapılanlar (Dalga 3 — token & yapısal optimizasyon):**
+- **CLAUDE.md güvenli lean trim**: §9 "Runtime — INTEGRATION_SMOKE bar" altındaki 1–5 kriterleri §3'ü kelimesi kelimesine 3. kez tekrar ediyordu; tek satır cross-ref'e indirildi (§3 tek kaynak), §9'a özgü içerik (responsive extreme-cell, contract-parity, walking-skeleton, CI-jobs binding) korundu. Her agent her okumada token kazanır, anlam kaybı yok. CLAUDE.md **çok-dosyaya BÖLÜNMEDİ** — agent'lar dosyanın tamamını okuduğu için bölme parçalanma/okuma round-trip riski getirirdi; lean trim güvenli kazancı parçalanma riski olmadan sağlıyor.
+- **23-agent boilerplate konsolidasyonu YAPILMADI (kanıta dayalı karar)**: 244K-token derinlikte bir haritalama, "boilerplate" sanılan blokların ezici çoğunluğunun aslında her agent'ın o kuralı *uygulayan operasyonel spec'i* olduğunu gösterdi (code-reviewer'ın §14 rubric'i, test-writer'ın contract-parity kuralları, orchestrator'ın gate spec'i, task-planner'ın faz şablonları, app-bootstrap/db-migration'ın smoke-evidence prosedürleri). Bunları silmek agent'ları bozar. Tek gerçekten generic dedup (TR/EN tek satırı) ~23 satır için renumbering riski + ihmal edilebilir getiri → yapılmadı. Bu, "her şey profesyonel olsun" hedefinin doğru sonucu: zarar verecek bir refactor'dan kaçınmak.
+- **marketplace.json** da senkronlandı (plugin.json'la aynı kusur: "24 agent / 25 skill" → 23 / 46).
+
+**Uçtan-uca doğrulama:** Bağımsız bir consistency audit pipeline'ı baştan sona izledi (`/start-project` → product-analyst → architect → ux-designer → task-planner → faz başına orchestrator döngüsü). State machine 4 kaynakta sıfır-drift (CLAUDE.md §3 / orchestrator.md / hook VALID_STATUSES (16) / README), komut→agent wiring tam, approval gate'leri (5) tutarlı, INTEGRATION_SMOKE §3↔§9↔orchestrator↔CI hizalı, her iki hook doğru bağlı, silinen dosyalara dangling referans yok. Verdict: **end-to-end coherent ve profesyonel.**
+
+**Sonuç/etki:** Template artık kurulabilir artefaktlarıyla (plugin.json + marketplace.json) tutarlı, geliştirme artefaktı sızdırmıyor, en kritik agent prohibition'ları mekanik olarak zorlanıyor, CI job isimleri yaptıkları işe dürüst, anayasa yinelenen kriter tekrarından arındırıldı. Agent sayısı her yerde **23**'e sabitlendi (ADR-005/007'deki "24" tarihsel yazım hatasıydı).
+
+**Ayrı angajman olarak bekleyen:** İlk gerçek pilot proje, 45 `pre-seeded` skill'i `battle-tested`'e taşıyacak gerçek doğrulamayı sağlar (template edit değil, gerçek uygulama build'i).
+
+---
+
 (Future ADRs added here.)

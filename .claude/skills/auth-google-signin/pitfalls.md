@@ -1,6 +1,7 @@
 # Google Sign In — Pitfalls Catalog
 
-17 entries from `google_sign_in` v7 migration guide + Flutter GitHub issues.
+20 entries from `google_sign_in` v7 migration guide + Flutter GitHub issues +
+production Bug 12 (Supabase Skip-nonce + iOS GID*ClientID Info.plist run — #18–#20).
 
 | # | Symptom | Cause | Fix | Source |
 |---|---|---|---|---|
@@ -21,3 +22,6 @@
 | 15 | Apple App Review rejection: "must offer Sign in with Apple" | Guideline 4.8: any third-party login on iOS → must also offer SIWA | Implement `auth-apple-signin` skill and show on iOS only | [Apple guidelines 4.8](https://developer.apple.com/app-store/review/guidelines/) |
 | 16 | After `signOut`, calling `authenticate` shows the same Google account without prompt | `signOut` only clears in-process state, not the Credential Manager grant | Use `disconnect()` to revoke entirely, OR accept this as "remember me" UX | [Google disconnect docs](https://developers.google.com/identity/sign-in/android/disconnect) |
 | 17 | Hot-restart breaks `authenticate()` with weird state | Singleton state survives hot restart but native side resets | Force a `signOut()` then re-`initialize` in dev only; not a production issue | community |
+| 18 | **(Supabase)** `supabase.auth.signInWithIdToken(provider: google, idToken: …)` → "Nonces mismatch" hatası | `google_sign_in` 6.x signIn'de `nonce` parametresi yok. Google SDK token'a HASH'lenmiş nonce ekler; raw nonce Dart side'a expose edilmez. Supabase eşleşme bekler → mismatch. JWT payload'dan nonce çıkartmak da fix değil (hash gelir, raw bekleniyor) | **Supabase Dashboard → Auth → Providers → Google → "Skip nonce checks" = ON.** Önemli: ilk açılışta cache nedeniyle hemen çalışmaz — **force-refresh**: OFF → Save → ON → Save → 2-3 dk bekle. Dart kodu nonce parametresini HİÇ geçmez (sadece `idToken` + `accessToken`) | [supabase-flutter#465](https://github.com/supabase/supabase-flutter/issues/465), [supabase#20059](https://github.com/supabase/supabase/issues/20059) |
+| 19 | **(iOS)** `-[GIDSignIn signInWithOptions:]` NSException → app crash | Info.plist'te `GIDClientID` + `GIDServerClientID` eksik (yeni Google SDK 3 key ister, sadece `CFBundleURLTypes` yetmez) | iOS `Info.plist`'e EKLE: `<key>CFBundleURLTypes</key>...com.googleusercontent.apps.<IOS_CLIENT_ID_PREFIX>`, `<key>GIDClientID</key><string>YOUR_IOS_CLIENT.apps.googleusercontent.com</string>`, `<key>GIDServerClientID</key><string>YOUR_WEB_CLIENT.apps.googleusercontent.com</string>` | [google_sign_in_ios docs](https://pub.dev/packages/google_sign_in_ios) |
+| 20 | **(Supabase)** `signInWithIdToken` 401 / "missing access_token" | Google `idToken` yeterli zannedildi ama Supabase Google provider'ı access_token da bekler | `final googleAuth = await googleUser.authentication; signInWithIdToken(provider: google, idToken: googleAuth.idToken!, accessToken: googleAuth.accessToken)` — ikisi de gerekli | [Supabase Google docs](https://supabase.com/docs/guides/auth/social-login/auth-google) |

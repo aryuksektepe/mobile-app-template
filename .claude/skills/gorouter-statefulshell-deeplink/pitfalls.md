@@ -58,7 +58,7 @@ Confirm the pinned version from `pubspec.lock` (don't assume). See also
 
 ---
 
-### Generalized bug catalog (Mimirva deep-link campaign — solve in minutes next time)
+### Generalized bug catalog (deep-link campaign — solve in minutes next time)
 | # | Symptom | Root cause | Canonical fix | Fast diagnosis |
 |---|---|---|---|---|
 | 1 | Push/deep-link targets a tab but Home opens | redirect/ancestor `GoRouter.go` doesn't switch the StatefulShell branch | process-global shell holder + `goBranch(idx, initialLocation: idx==currentIndex)`, consume outside redirect | nav-bar tap works but deep-link doesn't → certainly this |
@@ -68,6 +68,6 @@ Confirm the pinned version from `pubspec.lock` (don't assume). See also
 ### Findings log
 - 2026-05-16 — pre-seeded from ADR-033 (cold redirect crash) + ADR-034
   (StatefulShell branch not driven).
-- 2026-05-18 — enriched from a real production run (Mimirva 6-round deep-link/
+- 2026-05-18 — enriched from a real production run (6-round deep-link/
   push bug-loop): added P6–P10 + generalized bug catalog + process-global shell
   holder / bounded-handshake / guard-mismatch snippet. recurrence_count → 1.

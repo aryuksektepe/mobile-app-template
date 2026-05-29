@@ -1,24 +1,7 @@
 ---
 name: scoping-column-end-to-end-rollout
 description: How to add a new scoping/tenant FK column (well_id, tenant_id, org_id, workspace_id, family_id, household_id) to an existing event-driven Flutter+Supabase+Drift stack WITHOUT silent NULL writes, silent DTO drops, or saturated derived-VIEW aggregates. Use whenever a phase introduces a parent/scope column on a child table that already has event/progress data flowing through it.
-triggers:
-  - scoping column
-  - tenant column
-  - well_id
-  - tenant_id
-  - org_id
-  - workspace_id
-  - household_id
-  - family_id
-  - multi-tenant migration
-  - add fk column
-  - parent scoping
-  - add scoping fk
-  - retrofit scoping
-  - rollout column
-  - derived view aggregate
-  - mastery view
-  - aggregate view modules_total
+triggers: [scoping column, tenant column, well_id, tenant_id, org_id, workspace_id, household_id, family_id, multi-tenant migration, add fk column, parent scoping, add scoping fk, retrofit scoping, rollout column, derived view aggregate, mastery view, aggregate view modules_total]
 platforms: [ios, android]
 last_verified: 2026-05-26
 flutter_min: "3.27.0"

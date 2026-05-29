@@ -12,7 +12,7 @@
     {
       "name": "flutter-app-pipeline",
       "source": "./",
-      "description": "24-agent orchestrated Flutter pipeline with INTEGRATION_SMOKE runtime gate, contract-parity + responsive/dynamic-type enforcement, and 25 reusable skills.",
+      "description": "23-agent orchestrated Flutter pipeline with INTEGRATION_SMOKE runtime gate, contract-parity + responsive/dynamic-type enforcement, and 46 reusable skills.",
       "version": "1.0.0",
       "author": {
         "name": "aryuksektepe"

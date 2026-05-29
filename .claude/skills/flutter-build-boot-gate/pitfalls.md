@@ -38,9 +38,36 @@ phase's `## Integration Smoke` means the orchestrator can't confirm it and
 will (correctly) refuse to advance. Recording is part of the gate, not
 optional.
 
+## P7 — iOS 18.4+ / iOS 26+ physical device: DEBUG build cold-start crashes
+Apple tightened `mprotect()`; Dart JIT can't allocate executable pages without
+a debugger attached. `flutter run -d <iphone>` builds OK but hangs at
+"Installing and launching..." or installs and white-screens on Home-screen tap
+(ProMotion devices crash on `VSyncClient`). **`flutter run` debug + iOS 18.4+
+physical = not a runtime smoke** — that's an Apple-side runtime restriction,
+not a Flutter bug we can fix.
+
+For the runtime gate on iOS 18.4+ physical: build RELEASE and install via
+`xcrun devicectl`, then open from Home screen. Full runbook:
+[`ios-26-debug-release-only-physical`](../ios-26-debug-release-only-physical/SKILL.md).
+This pitfall trumps the "any flavor debug build" wording in implementation.md
+when the target device is iOS 18.4+ physical — substitute release.
+
+(Android is unaffected; iOS Simulator + debug also unaffected.)
+
+## P8 — SPM auto-integration (Flutter 3.44 default ON) breaks FlutterFire pod build
+After upgrading to Flutter 3.44, iOS build fails with duplicate symbols /
+linker errors mentioning FirebaseCore or grpc. The cause is Swift Package
+Manager auto-integration now ON by default, conflicting with the CocoaPods
+flow FlutterFire still uses.
+FIX: `flutter config --no-enable-swift-package-manager` → `flutter clean` →
+`cd ios && rm -rf Pods Podfile.lock && pod install`. Document the flag in
+the project's bootstrap docs so it doesn't regress.
+
 ---
 
 ### Findings log
 - 2026-05-16 — pre-seeded from post-mortem (Android desugaring + Kotlin
   languageVersion + MainActivity rename + missing notification drawable +
   Riverpod scoped-provider boot abort). Not yet validated in a fresh project.
+- 2026-05-27 — added P7 (iOS 26 mprotect/JIT release-only) + P8 (SPM
+  auto-integration FlutterFire conflict). Source: a production v1.2.0 release run.

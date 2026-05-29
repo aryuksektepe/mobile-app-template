@@ -52,6 +52,10 @@ Thumbs.db
 *.swp
 *.swo
 
+# ─── Python (the .claude/hooks/ validators are Python) ────────────────
+__pycache__/
+*.py[cod]
+
 # ─── Flutter (real projects extend this — app-bootstrap adds full Flutter ignore set) ──
 # Below entries are app-bootstrap's typical additions:
 # build/

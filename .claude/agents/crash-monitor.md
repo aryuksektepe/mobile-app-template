@@ -425,6 +425,64 @@ Test crash'i tetikleyip her iki dashboard'da PII redaction ve symbol resolution 
 
 ---
 
+## 8.1. iOS `.ips` Crash Log Retrieval (operator runbook)
+
+Cihazda crash olursa Crashlytics/Sentry'ye düşmesi 5+ dakika alır; bazı durumlarda hiç düşmez (network yok, release-mode init başarısız, vb.). Native `.ips` log'u **cihazdan doğrudan** alınır — bu agent kullanıcıya runbook olarak emit eder.
+
+```markdown
+## 🔬 iOS `.ips` crash log alma — operatöre talimat
+
+Crash dashboard'a düşmediyse veya stack trace eksikse, native .ips log'unu cihazdan alıyoruz.
+
+**Adımlar (iPhone — iOS 17+):**
+
+1. **Cihazda:** Settings → Privacy & Security → Analytics & Improvements → Analytics Data
+2. Listeden `Runner-<tarih>.ips` veya `<bundle-id>-<tarih>.ips` bul (en son crash'in zaman damgasına bak)
+3. Tap → sağ üstte Share icon → AirDrop ile Mac'ine gönder (veya Mail/Files)
+4. Mac'te `~/Downloads/Runner-*.ips` görünür
+
+**Mac tarafı — TCC sandbox workaround:**
+
+macOS `~/Downloads` klasörü TCC korumalıdır; shell sandbox doğrudan `cat` edemez. **Önce Finder ile `/tmp/`'ye kopyala**:
+
+- Finder → ⌘+Shift+G → `/tmp` → `.ips` dosyasını drag-drop
+- VEYA terminal: `cp ~/Downloads/Runner-*.ips /tmp/` (terminal Full Disk Access varsa çalışır)
+
+**Parse + threading info al** (python3 — sistem'de hazır):
+
+```bash
+python3 -c "
+import json
+with open('/tmp/Runner-XXX.ips') as f:
+    f.readline()  # ilk satır metadata header, JSON değil
+    data = json.load(f)
+exc = data.get('exception', {})
+print('Type:', exc.get('type'), exc.get('subtype'))
+print('Codes:', exc.get('codes'))
+for t in data.get('threads', []):
+    if t.get('triggered'):
+        print('\n=== Triggered thread ===')
+        for i, fr in enumerate(t.get('frames', [])[:20]):
+            print(f'{i}: {fr.get(\"symbol\", \"?\")}  ({fr.get(\"imageOffset\", \"?\")})')
+        break
+"
+```
+
+**Stack trace symbolicate:** Eğer cihaz release build'i lokal `.app` ile aynıysa:
+```bash
+atos -arch arm64 -o /path/to/Runner.app.dSYM/Contents/Resources/DWARF/Runner -l <load_address> <frame_address>
+```
+
+**Yaygın imzalar:**
+- `EXC_BAD_ACCESS` + `VSyncClient` → iOS 26 mprotect/JIT, debug build cold-start (`ios-26-debug-release-only-physical` skill)
+- `EXC_CRASH (SIGABRT)` + `Flutter` namespace → Dart fatal error; Sentry/Crashlytics'ten breadcrumb iste
+- `WatchdogTermination` → boot >20s (cold-start performance — `performance-reviewer`'a yönlendir)
+
+**Sonucu raporla:** Stack trace özetini buraya yapıştır, hangi imza olduğunu işaretle.
+```
+
+---
+
 ## 9. Alert Thresholds (operator config — agent emits, user sets in dashboards)
 
 | Metric | Threshold | Where to set |

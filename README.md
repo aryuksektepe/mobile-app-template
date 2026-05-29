@@ -85,7 +85,8 @@ mobile-app-development-templates/
 │   ├── skills/                     # Reusable knowledge — büyür zamanla
 │   │   └── INDEX.md                # coder ZORUNLU bunu okur
 │   └── hooks/
-│       └── validate-phase-state.py # Stop event'inde state validator
+│       ├── validate-phase-state.py # Stop/SubagentStop'ta faz state validator (36 test)
+│       └── guard-tool-use.py       # PreToolUse: agent prohibition'larını mekanik zorlar (16 test)
 ├── .project/                       # Living project knowledge
 │   ├── README.md
 │   ├── prd.md                      # (oluşturulacak — product-analyst)
@@ -126,11 +127,13 @@ CLAUDE.md §3'te tam state machine:
 ```
 DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
       → CODE_REVIEW → [BUG_HUNT] → SECURITY_REVIEW → PERFORMANCE_REVIEW
-      → COMPLIANCE_CHECK → QA_SMOKE_TEST → USER_APPROVAL
+      → INTEGRATION_SMOKE → COMPLIANCE_CHECK → QA_SMOKE_TEST → USER_APPROVAL
       → CHRONICLED → SKILL_EXTRACTED → DONE
 ```
 
 Her agent state'i okur, çalışır, frontmatter'ı günceller, orchestrator sıradakini dispatch eder.
+
+**`INTEGRATION_SMOKE` — runtime gate (asla atlanmaz):** Compliance ve QA, *gerçekten build edilip boot etmiş ve gerçek backend'e karşı çalıştırılmış* bir uygulama üzerinde çalışsın diye `COMPLIANCE_CHECK`'ten önce gelir. Statik gate'ler (`flutter analyze` + mock'lu testler + line coverage) çalışan bir uygulama değildir; bu gate gerçek `flutter build` + emülatörde `BOOT_OK` + mock'suz uçtan-uca backend akışı kanıtı ister. Detay: [CLAUDE.md §3](CLAUDE.md#3-the-pipeline--phase-state-machine).
 
 ## Slash Commands
 

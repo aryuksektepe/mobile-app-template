@@ -1,6 +1,7 @@
 # Hardening — Pitfalls Catalog
 
-10 entries from Flutter issue tracker, Firebase docs, R8 docs, Apple Xcode release notes.
+13 entries from Flutter issue tracker, Firebase docs, R8 docs, Apple Xcode release notes,
+and a production run release prep (iOS 26 + SPM + CocoaPods environment traps — #11–#13).
 
 | # | Symptom | Cause | Fix | Source |
 |---|---|---|---|---|
@@ -14,3 +15,6 @@
 | 8 | `--split-debug-info` files differ by build → symbol upload mismatch | Path includes timestamp / build number — symbols don't match the binary | Use a stable path: `build/symbols/<flavor>/<version>` (no build number in path); CI must persist these as artifacts | [Flutter symbol mgmt](https://docs.flutter.dev/deployment/obfuscate#read-an-obfuscated-stack-trace) |
 | 9 | Mocked tests use `mocktail` — release breaks because mocks were never excluded from prod build | Test code accidentally referenced from prod (rare; happens when a util is in both `test/` and `lib/`) | Run `flutter pub deps` — confirm `mocktail` is in `dev_dependencies` not `dependencies` | Flutter docs |
 | 10 | Play Store reject "App Bundle has unaligned uncompressed resources" | A pre-Android 6 .so resource isn't uncompressed-aligned by R8 | Update `android/app/build.gradle` `android.packagingOptions { jniLibs.useLegacyPackaging = false }` | [Android App Bundle docs](https://developer.android.com/guide/app-bundle/configure-base) |
+| 11 | iOS 18.4+ physical device: release build OK, **debug** build cold-start crashes / beyaz ekran | Apple `mprotect()` JIT'i debugger attached olmadan reddediyor — Flutter team officially "not supported" | Cihaz iteration için RELEASE build + `xcrun devicectl install`. Bkz [`ios-26-debug-release-only-physical`](../ios-26-debug-release-only-physical/SKILL.md) | [Flutter#183900](https://github.com/flutter/flutter/issues/183900) |
+| 12 | Flutter 3.44 upgrade sonrası iOS build linker error / duplicate symbols (FlutterFire) | Swift Package Manager auto-integration Flutter 3.44'te default ON; CocoaPods'la çakışır | `flutter config --no-enable-swift-package-manager` + `flutter clean` + `cd ios && rm -rf Pods Podfile.lock && pod install`. Bootstrap docs'a flag'i yaz, regress etmesin | FlutterFire issues |
+| 13 | `pod install` `Encoding::UndefinedConversionError` (özellikle Türkçe/Latin-1 macOS shell) | Shell default encoding UTF-8 değil | `~/.zshrc` veya `~/.bash_profile`'a kalıcı ekle: `export LANG=en_US.UTF-8` + `export LC_ALL=en_US.UTF-8`. Tek seferlik: `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install` | CocoaPods README |

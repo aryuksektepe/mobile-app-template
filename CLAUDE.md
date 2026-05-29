@@ -34,7 +34,7 @@ This template builds **production-grade, senior-level Flutter mobile application
 | Analytics | Firebase Analytics + project-specific (Mixpanel/Amplitude) | |
 | Payments | **purchases_flutter** (RevenueCat) | |
 | i18n | `flutter gen-l10n` + ARB files | TR + EN minimum |
-| Testing | `flutter_test`, `mocktail`, `integration_test` | |
+| Testing | `flutter_test`, `mocktail`, `integration_test`, `alchemist` (goldens) | |
 | CI/CD | GitHub Actions + Fastlane | |
 
 **Native escape hatch:** When platform-specific code is needed, write Kotlin (`android/app/src/main/kotlin/...`) or Swift (`ios/Runner/...`) modules and bridge via Flutter platform channels. Document the channel contract in the phase file.
@@ -355,11 +355,7 @@ Every agent must enforce these baselines. Violations block progression.
 - Line coverage from mocked tests ≠ integration coverage. A feature that touches a backend is NOT "tested" until its real backend path is exercised once (see Runtime below).
 
 ### Runtime — the `INTEGRATION_SMOKE` bar (every phase — enforced, not aspirational)
-- `flutter build <flavor>` (real compile, not `flutter analyze`) green for each flavor; iOS equivalent in CI
-- App boots on an emulator/device: `BOOT_OK` marker + `splash → first real screen`, no uncaught exception, no rebuild/dispose storm
-- ≥1 NON-MOCKED end-to-end flow per phase FR against a real backend (`supabase start` / staging); HTTP trace + DB row evidence pasted into `## Integration Smoke`
-- Every new Edge Function / RPC / migration applied to a real local stack with ≥1 real authenticated call → 2xx (not just "file written")
-- Every new screen has an executed, concrete tap-path from its PRD entry point ("defined route" ≠ "reachable")
+- **Criteria 1–5** (build / boot+`BOOT_OK` / non-mocked real-backend e2e / every Edge fn·RPC·migration applied + ≥1 real 2xx / every screen reachable) are defined authoritatively in **§3 "INTEGRATION_SMOKE — the runtime gate"**. They apply every phase; evidence goes in `## Integration Smoke`. (Not restated here — §3 is the single source.)
 - **Responsive/dynamic-type extreme cell:** the worst combination (smallest target device + max clamped OS text scale) boots and the phase's screens render with ZERO `RenderFlex`/overflow on a real emulator — evidence pasted
 - **Contract parity (no mock may encode a bug):** every `functions.invoke` / REST call has a test asserting HTTP method + body field names against the real Edge/OpenAPI signature; every `async*` provider has a yield-contract test; boundary mocks (`any(named:'body')`) at the client↔backend edge are forbidden — assert the contract or defer it to `INTEGRATION_SMOKE`
 - `walking_skeleton_invariant` is VERIFIED by this gate, never merely declared
@@ -421,7 +417,7 @@ Every agent must enforce these baselines. Violations block progression.
 When any agent starts, it MUST read in this order:
 1. `CLAUDE.md` (this file)
 2. `.project/architecture.md` — this is now a **lean INDEX** (TOC + stack summary + ADR log), NOT the full spec. Do NOT read the whole `arch/` tree.
-3. **Only the `arch/` slice(s) your role owns** (table below). Load another slice **on demand** if a task genuinely needs it — never read all slices "to be safe".
+3. **Only the `arch/` slice(s) your role owns** (table below). Load another slice **on demand** if a task genuinely needs it — never read all slices "to be safe". **If `architecture.md` / the `arch/` tree do not exist yet** (pre-architecture phases — `architect` generates them post-approval), skip steps 2–3; they are not dead paths, just not produced yet.
 4. The current phase file — the **LIVE** `phase-XX-{slug}.md` only. Open `phase-XX-{slug}-archive.md` ONLY when you must verify/append evidence (see §6 read/write rule).
 5. Any agent-specific files referenced in its own definition
 6. `.claude/skills/INDEX.md` (coder reads FIRST per §7; others may reference)
@@ -445,7 +441,7 @@ When any agent starts, it MUST read in this order:
 | `orchestrator`, `feature-chronicler`, `aso`, `localization`, `product-analyst` | index only (load a slice only if a specific check needs it) |
 | `architect` | producer — writes the index + all slices (see architect.md) |
 
-**Write authority (BINDING):** ONLY `architect` writes `.project/architecture.md` and `.project/arch/*` (post-approval changes go through ADRs — see architect.md). Every other agent is READ-ONLY on the index and all slices, same as the existing "do not edit architecture.md" rule in each agent's prohibitions — it now covers the whole `arch/` tree.
+**Write authority (BINDING):** ONLY `architect` writes `.project/architecture.md` and `.project/arch/*` (post-approval changes go through ADRs — see architect.md). Every other agent is READ-ONLY on the index and all slices, same as the existing "do not edit architecture.md" rule in each agent's prohibitions — it now covers the whole `arch/` tree. **This is mechanically enforced** by the `.claude/hooks/guard-tool-use.py` PreToolUse hook (deny on non-`architect` write to `architecture.md`/`arch/*`), alongside the read-only-reviewer (no production-code writes) and orchestrator (no Bash) guards — prose prohibitions are now backed by a deterministic hook, not just trusted to the model.
 
 ---
 

@@ -4,7 +4,7 @@
 > Match yoksa: implement from scratch, slug'ı phase frontmatter'da `skills_to_extract:`'e ekle.
 
 **Last updated:** 2026-05-27
-**Total skills:** 42 pre-seeded, 1 battle-tested (plus `_example-skill-template` for reference)
+**Total skills:** 46 — 45 pre-seeded + 1 battle-tested (`scoping-column-end-to-end-rollout`). Plus `_example-skill-template` (reference scaffolding, not counted, not matchable).
 
 > **Validation status legend:**
 > - `pre-seeded` — written from research, NOT yet validated in a real project. Treat as ADAPT not VERBATIM. Append findings to skill's pitfalls.md after first use.
@@ -46,6 +46,7 @@
 | [`ios-privacy-manifest`](ios-privacy-manifest/SKILL.md) | PrivacyInfo.xcprivacy — required since May 1 2024. Data types + tracking domains + Required Reason API + third-party SDK signatures | privacy manifest, PrivacyInfo.xcprivacy, NSPrivacyAccessedAPITypes, required reason api, ITMS-91056, ITMS-91065 | ios | 2026-05-26 | pre-seeded |
 | [`account-deletion-cross-cutting`](account-deletion-cross-cutting/SKILL.md) | 9-step orchestrated deletion across auth + RC + FCM + analytics + Crashlytics + secure storage + Drift. Apple 5.1.1(v) + Play mandate | account deletion, delete my account, KVKK silme, GDPR erasure, 5.1.1(v), data deletion, scrub user data | ios, android | 2026-05-26 | pre-seeded |
 | [`certificate-pinning-dio`](certificate-pinning-dio/SKILL.md) | Public-key (SPKI) pinning via Dio — primary + backup pin, debug bypass, fail-closed on MITM, rotation runbook. MASVS-NETWORK-1 | certificate pinning, public key pinning, ssl pinning, MITM, MASVS, badCertificateCallback, pin rotation | ios, android | 2026-05-26 | pre-seeded |
+| [`app-lock-pin-biometric`](app-lock-pin-biometric/SKILL.md) | App-içi kilit (PIN + biyometrik) — PBKDF2-HMAC-SHA256 120k iter, constant-time compare, exponential lockout, gerçek `paused→resumed` vs transient `inactive→resumed` ayrımı (Face ID dialog re-lock TETİKLEMEZ), iOS app-switcher privacy cover + native blur, sign-out cleanup. Finance/health/privacy app standardı | app lock, uygulama kilidi, pin lock, biometric lock, faceid lock, fingerprint lock, app-level lock, in-app pin, screen lock, finance lock, privacy lock, app switcher privacy, blur app switcher, local_auth, pin pad, lockout backoff, pbkdf2 pin | ios, android | 2026-05-27 | pre-seeded |
 
 ## Notifications
 
@@ -98,6 +99,7 @@
 | [`onboarding-flow`](onboarding-flow/SKILL.md) | İlk açılış — 3-5 sayfa PageView, A/B variant, soft-ask permission pattern, deep-link replay | onboarding, intro screens, walkthrough, first launch, welcome screen, soft ask, permission rationale | ios, android | 2026-05-10 | pre-seeded |
 | [`responsive-adaptive-layout`](responsive-adaptive-layout/SKILL.md) | RenderFlex overflow / küçük-büyük telefon / tablet / foldable / OS text scale. M3 window size classes + clamped textScaler + size×textScale golden matrix | responsive, adaptive layout, RenderFlex overflow, overflowed by pixels, screen size, small phone, tablet, foldable, split screen, MediaQuery.sizeOf, LayoutBuilder, breakpoint, window size class, text scale, textScaler, font size accessibility, dynamic type, large font | ios, android | 2026-05-17 | pre-seeded |
 | [`splash-and-launcher-icon`](splash-and-launcher-icon/SKILL.md) | flutter_native_splash 2.x + flutter_launcher_icons 0.14+ — Android 12+ splash API, iOS launch storyboard, dark variants, RTL, adaptive Android icons, light/dark iOS App Icon | splash screen, native splash, launch screen, flutter_native_splash, launcher icon, app icon, flutter_launcher_icons, adaptive icon, android 12 splash, white flash, monochrome icon | ios, android | 2026-05-26 | pre-seeded |
+| [`intl-currency-locale-resolve`](intl-currency-locale-resolve/SKILL.md) | Dart `intl` `NumberFormat.currency(locale: 'tr', name: 'TRY')` SESSİZ fallback → `'TRY 79.99'` (sembol yok). Doğru: tam locale `'tr_TR'` → `'₺79,99'`. Deno auto-resolves, Dart etmez — server-client format mismatch (özellikle çift bildirim) klasik kaynak | intl currency, NumberFormat currency, TRY 79.99 fallback, currency symbol missing, tr_TR locale, locale short code, currency format wrong, ₺ symbol not showing, intl locale resolve | ios, android | 2026-05-27 | pre-seeded |
 
 ## Networking & Sync
 
@@ -115,6 +117,7 @@
 | [`firebase-core-setup`](firebase-core-setup/SKILL.md) | FlutterFire — flutterfire_cli, multi-flavor (dev/stg/prod) Firebase projects, App Check (Play Integrity + DeviceCheck) | firebase, flutterfire, firebase init, firebase setup, firebase_core, flavor, app check, google-services.json, GoogleService-Info.plist | ios, android | 2026-05-10 | pre-seeded |
 | [`flutter-build-boot-gate`](flutter-build-boot-gate/SKILL.md) | Compile + first-boot smoke gate every phase + CI — BOOT_OK marker harness; the `INTEGRATION_SMOKE` gate's core | build gate, boot smoke, does it run, flutter build apk, walking skeleton, app launches, integration_test boot, INTEGRATION_SMOKE, BOOT_OK | ios, android | 2026-05-16 | pre-seeded |
 | [`ios-android-hardening`](ios-android-hardening/SKILL.md) | Release hardening — `--obfuscate --split-debug-info`, R8/ProGuard keep rules (Firebase/Drift/freezed/RC), iOS Strip Style + Symbols upload, verify-release-shrinking gate | proguard, r8, obfuscation, split debug info, release crash, NoSuchMethodError release, shrinking broke, app size reduce, strip symbols, dsym upload, hardening | ios, android | 2026-05-26 | pre-seeded |
+| [`ios-26-debug-release-only-physical`](ios-26-debug-release-only-physical/SKILL.md) | iOS 18.4+ / iOS 26+ Apple `mprotect()` Dart JIT'i untethered cold-start'ta reddediyor → fiziksel iPhone'da DEBUG build crash veya beyaz ekran (ProMotion garantili). Cihazda iteration için RELEASE build + `xcrun devicectl install` ZORUNLU. Simulator + debug ve Android etkilenmez. qa-test-guide + INTEGRATION_SMOKE operasyonel runbook | ios 26, ios 18.4, debug build crash physical, vsyncclient, mprotect, flutter ios jit, beyaz ekran ios, white screen ios cold start, EXC_BAD_ACCESS FlutterViewController, ProMotion crash, devicectl install, flutter debug doesn't run, debug build doesn't launch | ios | 2026-05-27 | pre-seeded |
 
 ## Backend & Data Contracts
 
@@ -211,6 +214,19 @@ scoping-column-end-to-end-rollout (battle-tested standalone; pairs naturally wit
                                     drift-schema-migrations + supabase-rls-client-contract
                                     + supabase-progress-aggregation-trigger when adding a
                                     multi-tenant FK column to event-driven tables)
+
+ios-26-debug-release-only-physical (operational runbook — no build dependency.
+                                    Referenced by qa-test-guide preamble + INTEGRATION_SMOKE
+                                    + flutter-build-boot-gate pitfall P7)
+
+app-lock-pin-biometric             (depends on secure-storage-tokens; pairs with
+                                    permission-handler-centralized for biometric prompt;
+                                    pairs with ios-26-debug-release-only-physical for
+                                    cihaz smoke)
+
+intl-currency-locale-resolve       (independent foundation — every UI feature that shows
+                                    money/date should route through this; pairs with
+                                    notifications-fcm to keep server-client format parity)
 ```
 
 **Recommended Phase 01 order** (foundations first):

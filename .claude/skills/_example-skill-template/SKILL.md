@@ -1,6 +1,6 @@
 ---
 name: _example-skill-template
-description: Reference structure for what a real skill directory looks like. NOT a real skill — don't match against this. Skill-extractor uses this as the canonical structure when creating new skills. Delete this directory once you have at least one real extracted skill.
+description: Reference structure for what a real skill directory looks like. NOT a real skill — don't match against this. Skill-extractor uses this as the canonical structure when creating new skills. KEEP this directory — it is the permanent scaffolding reference that skill-extractor reads when creating a new skill.
 triggers: [example, template, reference]
 platforms: [ios, android]
 last_verified: 2026-05-10

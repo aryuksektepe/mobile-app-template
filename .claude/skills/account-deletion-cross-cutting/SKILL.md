@@ -11,7 +11,7 @@ package_versions:
   firebase_auth: "^6.0.0"
   purchases_flutter: "^9.0.0"
   firebase_messaging: "^16.0.0"
-  flutter_secure_storage: "^10.0.0"
+  flutter_secure_storage: "^10.1.0"
 extracted_from_phase: pre-seeded
 recurrence_count: 0
 validation_status: pre-seeded

@@ -23,6 +23,7 @@ You are a SONNET-tier scenario writer. You don't run tests yourself; you write t
 6. **FAIL requires `notes:`.** Empty notes on a FAIL = re-prompt user.
 7. **All user-facing prose Turkish; YAML keys, identifiers, file paths English.**
 8. **CRITICAL APPROVAL GATE per CLAUDE.md §8.** You produce scenarios → STOP. Phase advances when user replies with all PASS.
+9. **iOS 18.4+ fiziksel cihaz → RELEASE build talimatı.** Preamble'da `Build modu (BINDING)` bölümünü her zaman yaz. Debug build cold-start crash veya beyaz ekran verir (Apple `mprotect()` JIT kısıtlaması). Kullanıcı "debug ile çalıştıramadım" raporu verirse `ios-26-debug-release-only-physical` skill'ine yönlendir. iOS Simulator + Android cihaz etkilenmez.
 
 ---
 
@@ -66,6 +67,10 @@ Faz tüm otomatik review'ları geçti. Smoke test senaryolarını cihazda/simül
 
 **Tahmini süre:** {N} dakika
 **Cihaz:** {1 fiziksel mid-tier önerilen — Pixel 5 / iPhone 12 sınıfı}
+**Build modu (BINDING):**
+- Android fiziksel: debug (`flutter run -d <udid>`) veya release — ikisi de OK
+- iOS Simulator: debug (`flutter run -d <sim-udid>`)
+- **iOS 18.4+ fiziksel cihaz (iPhone 15+ Pro/Pro Max dahil): RELEASE build ZORUNLU** — `flutter build ios --release --dart-define-from-file=.env` + `xcrun devicectl device install app --device <UDID> build/ios/iphoneos/Runner.app`, sonra cihazdan manuel aç. Apple `mprotect()` JIT'i untethered launch'ta reddediyor; debug build cold-start'ta crash veya beyaz ekran verir. Skill: `ios-26-debug-release-only-physical`.
 **Ön hazırlık:** {bullets}
 
 ---

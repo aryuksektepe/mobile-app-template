@@ -90,11 +90,18 @@ jobs:
       - run: supabase start
       - name: Serve Edge Functions + smoke an authenticated call
         run: |
-          supabase functions serve --no-verify-jwt=false &
-          sleep 5
-          # Fail loudly on the ES256<->HS256 / verify_jwt class before launch.
-          # Projects replace this with a real authenticated call per new fn.
-          curl -fsS -X OPTIONS "$SUPABASE_URL/functions/v1/health" || true
+          set -euo pipefail
+          if ls supabase/functions/*/index.ts >/dev/null 2>&1; then
+            supabase functions serve --no-verify-jwt=false &
+            sleep 5
+            # Fail LOUDLY on the ES256<->HS256 / verify_jwt class before launch.
+            # NOTE: no '|| true' — this step MUST gate. Projects extend it with a
+            # real authenticated 2xx call per new function (INTEGRATION_SMOKE #4).
+            curl -fsS -X OPTIONS "${SUPABASE_URL:-http://localhost:54321}/functions/v1/health"
+          else
+            echo "No Edge Functions present yet — nothing to smoke. Per-feature \
+            work wires a real authenticated call here before the fn ships."
+          fi
       - uses: subosito/flutter-action@v2
         with: { channel: stable }
       - run: flutter pub get
@@ -122,10 +129,21 @@ jobs:
         with: { channel: stable }
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - name: Boot + e2e smoke (${{ matrix.platform }})
+      # Android: boot a real emulator and run the boot+reachability smoke on it.
+      - name: Boot smoke (Android emulator)
+        if: matrix.platform == 'android'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          script: flutter test integration_test/boot_smoke_test.dart
+      # iOS: actually boot a simulator (the old job only echoed instructions and
+      # never booted one) and run the boot smoke on it.
+      - name: Boot smoke (iOS simulator)
+        if: matrix.platform == 'ios'
         run: |
-          echo "Run boot_smoke_test + non-mocked integration_test on a real \
-          ${{ matrix.platform }} emulator/simulator. Android: wrap in \
-          reactivecircus/android-emulator-runner; iOS: xcrun simctl boot + \
-          flutter test integration_test/."
-          flutter test integration_test/boot_smoke_test.dart
+          set -euo pipefail
+          DEVICE="iPhone 15"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          flutter test integration_test/boot_smoke_test.dart -d "$DEVICE"

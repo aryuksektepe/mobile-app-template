@@ -1,7 +1,7 @@
 # Deep Links — Pitfalls Catalog
 
 21 entries from Apple/Google docs, Branch.io guides, Flutter GitHub issues,
-and a real production run (Mimirva deep-link/push campaign — #17–#21).
+and a real production run (deep-link/push campaign — #17–#21).
 
 | # | Symptom | Cause | Fix | Source |
 |---|---|---|---|---|

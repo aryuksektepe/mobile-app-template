@@ -67,17 +67,21 @@ flutterfire reconfigure
 | Multi-device token sync | [snippets/token_sync.dart](snippets/token_sync.dart) |
 | AndroidManifest entries | [snippets/AndroidManifest.snippet.xml](snippets/AndroidManifest.snippet.xml) |
 | Info.plist entries | [snippets/Info.plist.snippet.xml](snippets/Info.plist.snippet.xml) |
+| iOS foreground `willPresent` delegate | [snippets/AppDelegate.willPresent.snippet.swift](snippets/AppDelegate.willPresent.snippet.swift) |
+| Edge Function: FCM message with OS-level dedup keys | [snippets/edge-fn-dedup-buildFcmMessage.ts](snippets/edge-fn-dedup-buildFcmMessage.ts) |
 
 For full setup (APNs key, NSE target, channel creation, OEM workarounds) → [implementation.md](implementation.md).
 
 ## Known pitfalls
 
-→ [pitfalls.md](pitfalls.md) (14 entries). Top 5:
+→ [pitfalls.md](pitfalls.md) (22 entries). Top 7:
 1. Background handler not firing — must be top-level + `@pragma('vm:entry-point')`.
 2. iOS dev not receiving — use `.p8` auth key, not legacy `.p12` cert.
-3. Foreground notification not shown — FCM does NOT auto-show; mirror via local notifications.
+3. Foreground notification not shown — FCM does NOT auto-show; mirror via local notifications + iOS AppDelegate `UNUserNotificationCenter` delegate + `willPresent` override.
 4. Android white-square icon — adaptive icon with non-transparent bg; need monochrome PNG.
 5. Cold-start tap lands on `/` then jumps — pending-link Provider replayed after auth ready.
+6. **Hybrid local + FCM çift bildirim** — `apns-collapse-id` (iOS) + Android `notification.tag` deterministic string ile OS-level dedup (pitfalls #17).
+7. **Background handler `flutter_local_notifications.initialize()` çağırma** — deadlock; SADECE light işler (pitfalls #19).
 
 ## Verification
 
