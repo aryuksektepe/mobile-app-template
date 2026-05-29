@@ -57,14 +57,20 @@ jobs:
         with: { channel: stable }
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - name: Compile (catches native/Gradle/Kotlin/desugaring/manifest)
-        run: flutter build apk --flavor dev --debug --target lib/main_dev.dart
-      - name: Boot smoke on emulator (BOOT_OK marker + first screen)
+      # Single source of truth: the SAME tool/run_smoke.sh the in-loop gate runs.
+      # It compiles (catches native/Gradle/Kotlin/desugaring/manifest), boots on
+      # the emulator, runs integration_test/, asserts BOOT_OK/FIRST_SCREEN_OK
+      # markers, and exits non-zero on any failure. (CLAUDE.md §3 / ADR-011)
+      - name: Build + boot smoke (proof-of-work, run_smoke.sh)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
-          script: flutter test integration_test/boot_smoke_test.dart
+          script: bash tool/run_smoke.sh ci dev
+      - name: Upload smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: smoke-android, path: .project/qa-runs/smoke-*.log, if-no-files-found: ignore }
 
   build-ios:
     name: Build (iOS, no codesign)
@@ -129,21 +135,25 @@ jobs:
         with: { channel: stable }
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      # Android: boot a real emulator and run the boot+reachability smoke on it.
-      - name: Boot smoke (Android emulator)
+      # Android: boot a real emulator and run the SAME run_smoke.sh as the loop.
+      - name: Smoke (Android emulator, run_smoke.sh)
         if: matrix.platform == 'android'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
-          script: flutter test integration_test/boot_smoke_test.dart
+          script: bash tool/run_smoke.sh ci dev
       # iOS: actually boot a simulator (the old job only echoed instructions and
-      # never booted one) and run the boot smoke on it.
-      - name: Boot smoke (iOS simulator)
+      # never booted one), then run the SAME run_smoke.sh on it.
+      - name: Smoke (iOS simulator, run_smoke.sh)
         if: matrix.platform == 'ios'
         run: |
           set -euo pipefail
           DEVICE="iPhone 15"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
-          flutter test integration_test/boot_smoke_test.dart -d "$DEVICE"
+          bash tool/run_smoke.sh ci dev
+      - name: Upload smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: smoke-${{ matrix.platform }}, path: .project/qa-runs/smoke-*.log, if-no-files-found: ignore }

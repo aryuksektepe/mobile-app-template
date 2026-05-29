@@ -111,6 +111,26 @@ Blocked: T-XX — {reason}
 {Yapman gereken: ... / OPEN_QUESTION: ...}
 ```
 
+### Stage 7: INTEGRATION_SMOKE run (ONLY when dispatched at status `INTEGRATION_SMOKE`)
+
+When the orchestrator dispatches you at `INTEGRATION_SMOKE`, you are NOT implementing — you RUN the runtime gate and capture proof-of-work (CLAUDE.md §3 / ADR-011). Do NOT hand-write "BOOT_OK ✓" — that is a process violation the `verify-smoke.py` hook will block.
+
+1. Ensure an emulator/simulator is online (`flutter emulators --launch <id>` if needed).
+2. Run the canonical producer: `bash tool/run_smoke.sh <phase_id> dev`. It builds with `--dart-define=GIT_SHA=$(git rev-parse --short HEAD)`, boots on the device, runs `integration_test/` (boot + non-mocked e2e), and writes `.project/qa-runs/smoke-<phase>-<sha>-<ts>.log`.
+3. **If it exits non-zero (build/boot/e2e failed):** the smoke caught a real bug. Append the failure + log path to `## Handoff Notes`, fix it as a normal coder task (back in `IN_PROGRESS`), and re-run. Do NOT paste a passing block.
+4. **If it exits 0:** append to the archive's `## Integration Smoke`:
+   ```
+   ### Smoke run YYYY-MM-DD (phase <id>)
+   - artifact: `.project/qa-runs/smoke-<phase>-<sha>-<ts>.log`
+   - result: PASS — SMOKE_RESULT exit=0 sha=<sha>
+   - markers: BOOT_OK sha=<sha> ✓ · FIRST_SCREEN_OK ✓ · All tests passed ✓
+   - per-FR non-mocked e2e: <FR-id → HTTP trace + DB row ref> …
+   - new screens reachable: <screen → tap-path> …
+   ```
+   Then hand back to the orchestrator (which `Read`s the artifact + the hook verifies it).
+
+The smoke runs EVERY phase, in-loop — never deferred to the user's manual test. A bug caught here is localized to this phase; deferring it lets bugs compound across phases.
+
 ---
 
 ## 4. Architecture Invariants (RFC 2119, binding)

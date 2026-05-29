@@ -28,10 +28,15 @@ void main() {
     FlutterError.onError = prev;
     expect(errors, isEmpty, reason: 'Uncaught errors during boot: $errors');
 
-    // Boot marker: main()/bootstrap() MUST emit `debugPrint('BOOT_OK
-    // flavor=…')` as its last line. tool/smoke_boot.sh greps device logs for
-    // it; here we assert a real first screen rendered (a settled splash that
-    // never navigates is NOT a passing boot).
+    // Proof-of-work markers (see snippets/boot_markers.dart): main()/bootstrap()
+    // MUST emit `debugPrint('BOOT_OK flavor=… sha=$kGitSha ts=…')` as its last
+    // line, and a post-first-frame callback MUST emit
+    // `debugPrint('FIRST_SCREEN_OK route=… sha=$kGitSha')`. tool/run_smoke.sh
+    // greps the captured run for both (with the sha it built with) +
+    // "All tests passed", then appends SMOKE_RESULT; verify-smoke.py blocks the
+    // gate unless all three appear with the HEAD sha. Here we assert a real
+    // first screen rendered (a settled splash that never navigates is NOT a
+    // passing boot).
     // TODO(executor): assert the known first screen, e.g.:
     // expect(
     //   find.byType(SplashScreen).evaluate().isNotEmpty ||

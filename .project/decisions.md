@@ -321,4 +321,28 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-011 — INTEGRATION_SMOKE'u sahtelenemez, döngü-içi proof-of-work yap (A+B)
+
+**Tarih:** 2026-05-29
+**Karar veren:** user ("auto-modda 2-3 gün koşuyor, sonra simülatörde az iş + bol bug" sorununun çözümü; detaylı tasarım onaylandı)
+
+**Problem (kök neden, araştırma-destekli):** Klasik "hallucinated progress + bileşik hata + doğrulama boşluğu". Pipeline'ın tedavisi (INTEGRATION_SMOKE) doğru, AMA auto-modda agent gerçek emülatör çalıştır(a)madığı için `## Integration Smoke`'a *çalıştırmadan* "BOOT_OK ✓" yazıp geçiyordu (self-report). Eski hook sadece bölümün VARLIĞINI kontrol ediyordu, kanıtın GERÇEKLİĞİNİ değil. İlk gerçek çalıştırma kullanıcının elle simülatör testiydi (2-3 gün sonra) → faz 1 hataları faz N'e kadar birikip bir anda patlıyordu. Ayrıca push yapılmadığı için CI runtime job'ları hiç ateşlenmiyordu (güvenlik ağı bağlı değil).
+
+**Karar (A+B):** Runtime gate'i beyandan **proof-of-work**'e çevir, ve her fazda **döngü-içi gerçekten çalıştır**.
+
+- **`tool/run_smoke.sh` (tek kaynak)** — `flutter-build-boot-gate` skill'inde. `--dart-define=GIT_SHA=$(git rev-parse --short HEAD)` ile build + gerçek cihazda boot + `integration_test/` (boot + non-mocked e2e) → `.project/qa-runs/smoke-<phase>-<sha>-<ts>.log` üretir; `BOOT_OK …sha=…` + `FIRST_SCREEN_OK` + `SMOKE_RESULT exit=0 sha=…` içerir. Lokal döngü, coder ve CI hep AYNI scripti çağırır.
+- **Sha-bound marker'lar** (`boot_markers.dart`): `emitBootOk` / `emitFirstScreenOk`, `kGitSha` = build-zamanı dart-define. Doğru-SHA'lı marker ancak gerçekten o commit'te build+boot olduysa var olabilir → anti-gaming çekirdeği.
+- **`verify-smoke.py` hook (15 test)** — Stop/SubagentStop'ta MEKANİK backstop: bir faz INTEGRATION_SMOKE veya sonrasındaysa, archive `## Integration Smoke` geçerli bir artefakta referans vermeli (dosya var + sha==HEAD + lib/'den taze + 3 marker mevcut), yoksa exit 2 (bloke). Bu, denetimin işaretlediği "en zor gate'in mekanik backstop'u yok" boşluğunu kapatır.
+- **orchestrator**: INTEGRATION_SMOKE'ta coder'ı dispatch edip `run_smoke.sh` ÇALIŞTIRTIR, sonra artefaktı Read ile teyit eder; el-yazısı evidence blok kabul ETMEZ. **Auto-modda aynı fazda 2 ardışık smoke fail → HALT + kullanıcıya bildir** (bozuk temele inşa yok, sonsuz churn yok). Bu, kullanıcının "2-3 gün sonra fark etme"sini "2. fail'de dur"a indirir.
+- **coder Stage 7**: INTEGRATION_SMOKE'ta implementasyon değil, smoke ÇALIŞTIRMA + artefakt referanslama. Fail → gerçek bug, IN_PROGRESS'e dön + düzelt + yeniden koş.
+- **CI**: `build-and-boot` + `integration-smoke` (android emulator-runner + iOS gerçek `xcrun simctl boot`) aynı `run_smoke.sh`'ı çağırır + artefaktı upload eder. `.project/qa-runs/**` zaten generated-clean diff gate'inden hariç.
+
+**Etki:** Bug'lar faz N'de lokal/erken çıkar (bol-bug biter); sahte yeşil imkansızlaştığı için agent gerçek ilerleme üretmek zorunda (az-iş biter). Her faz dakikalar ekler ama kaybedilen 2-3 günün yanında ihmal edilebilir.
+
+**Dürüst sınır:** Belirlenmiş kötü-niyetli bir agent hâlâ doğru-SHA'lı + taze + marker'lı bir log elle uydurabilir (Write+Bash var). Tasarım bunu *imkansız* yapmaz; honest path'i (scripti koş) strictly daha kolay + sahteyi *denetlenebilir açık sahtekarlığa* çevirir. Mutlak garanti = agent'ın yazamadığı sandbox (ayrı, büyük iş — gelecek notu).
+
+**Dokunulan:** `verify-smoke.py` (+test, 15), `settings.json` (Stop/SubagentStop), `flutter-build-boot-gate` skill (`run_smoke.sh` + `boot_markers.dart` + güncellenen `boot_smoke_test.dart` + SKILL.md), `orchestrator.md`, `coder.md` (Stage 7), `app-bootstrap.md`, `CLAUDE.md` §3+§9, `ci.yml`.
+
+---
+
 (Future ADRs added here.)
