@@ -345,4 +345,17 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-012 — CI template-guard: boş template'te ağır job'ları skip et (dakika yakma)
+
+**Tarih:** 2026-06-01
+**Karar veren:** user ("CI dakikalarımız gidiyor, araştır planla çöz")
+
+**Problem:** Bu repo bir TEMPLATE — içinde Flutter projesi yok (`pubspec.yaml`/`lib/` yok). Her push'ta 6 CI job'ı `flutter pub get` adımında `Expected to find project root` ile fail ediyordu → her push'ta dakikalar yanıyor + "All jobs have failed" maili geliyordu. (Ayrı ve önceki bir sorun: bir `upload-artifact` step'inde `${{ }}` inline flow-map `{ }` içinde olduğu için YAML parse patlıyordu → "No jobs were run"; o önce düzeltildi, blok-stil `with:`.)
+
+**Karar:** Ucuz (<10s) bir `guard` job'ı eklendi: `pubspec.yaml` var mı bakar, `has_app=true|false` output verir. 5 ağır job (`analyze-test`, `build-and-boot`, `build-ios`, `backend-integration`, `integration-smoke`) `needs: guard` + `if: needs.guard.outputs.has_app == 'true'` ile gate'lendi. Boş template'te bu job'lar **skip** edilir (fail DEĞİL → failure maili yok, dakika yanmaz). `app-bootstrap` gerçek projeyi oluşturup `pubspec.yaml` üretince CI otomatik tam çalışır — değişiklik şeffaf.
+
+**Etki:** Template repo'da push başına CI maliyeti ~6 fail-eden-job-dakikası → tek ~10s guard job'ı. CLAUDE.md §9 "CI economy" kuralıyla tutarlı. Skipped-job, GitHub'da yeşil/nötr görünür, failure bildirimi tetiklemez.
+
+---
+
 (Future ADRs added here.)
