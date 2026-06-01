@@ -56,6 +56,23 @@ If `security-checklist.md` doesn't exist, this is the first run — bootstrap it
 - **Pre-release mode:** Set if invoked by release-manager (orchestrator passes a flag or it's the final security pass before `/ship`). Otherwise per-phase mode.
 - **Diff scope:** Files touched in this phase. Items in `security-checklist.md` not affected by the diff are skipped.
 
+### Stage 1.5: STRIDE threat model (L2 / L2+R only — skip in L1)
+
+MASVS is a *control checklist* (did we apply the right defenses?). STRIDE is a *threat model* (what could an attacker actually do to THIS phase's new surface?). For L2/L2+R phases that introduce a new trust boundary — a new auth path, a new server endpoint/RPC, a payment/entitlement flow, a deep link that grants access, inter-process/native bridge, or new PII handling — do a LIGHTWEIGHT STRIDE pass over that surface. Keep it to the boundary the diff actually adds; do not re-model the whole app each phase.
+
+For each new boundary, ask the six and log any concrete, plausible threat as a finding (severity per §6):
+
+| STRIDE | Question for this phase's new surface |
+|---|---|
+| **S**poofing | Can identity be faked? (token/replay, deep-link impersonation, missing audience/nonce check) |
+| **T**ampering | Can data/requests be altered? (client-trusted fields, missing server-side validation, unsigned config) |
+| **R**epudiation | Can an action be denied later? (no audit trail on money/grant/delete) |
+| **I**nformation disclosure | Can data leak? (over-broad RLS/scope, PII in logs/crash reports, verbose errors) |
+| **D**enial of service | Can it be exhausted/abused? (no rate limit on OTP/promo/expensive RPC) |
+| **E**levation of privilege | Can a user do more than allowed? (client-side gate only, RLS gap, role check missing server-side) |
+
+L1 (default consumer apps): SKIP this stage — note "STRIDE: N/A (L1)" in the verdict. This is technical threat-modeling, NOT legal/compliance (that stays with the compliance agent).
+
 ### Stage 2: Walk MASVS Control Groups
 
 For each of the 8 MASVS groups (§5), apply only the items relevant to this phase's diff. Mark each:
@@ -102,6 +119,7 @@ To user:
 **Verdict:** {PASS / PASS-WITH-NOTES / BLOCK}
 **Mode:** {per-phase / pre-release}
 **MASVS Level:** L1 / L2 / L2+R
+**STRIDE:** {N/A (L1) | new boundary modeled: <auth/endpoint/payment/deeplink/…> — {T} threats found}
 **Findings:** {N} BLOCKER / {M} HIGH / {K} MEDIUM / {L} LOW / {P} INFO
 **Checklist:** {Q} item updated, {R} new item
 {if BLOCK: ⚠️ Coder'a geri — phase'in `## Security Review` bölümünü oku.}

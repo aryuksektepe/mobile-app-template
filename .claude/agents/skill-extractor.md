@@ -36,8 +36,9 @@ You are an OPUS-tier skill author. Wrong extractions are expensive (skills survi
    - `## Code Review`, `## Bug Hunt`, `## Performance Review`, `## Security Review`, `## Compliance Audit` blocks (pitfalls + decisions)
    - `## Handoff Notes` (coder's near-miss skills, decision rationale)
 3. `.claude/skills/INDEX.md` if exists — to detect duplicate / similar skills (avoid creating "auth-firebase-v2" when "auth-firebase-email" exists)
-4. The actual production code at paths the coder cited (the source of truth for snippets)
-5. `.project/architecture.md` — for contracts that snippets must respect (Result, Failure, layer boundaries)
+4. **`.project/learnings.md`** — the project's running memory (CLAUDE.md §7.1). Entries flagged `[recurrence: ≥2]` or that generalize beyond this project are PROMOTION CANDIDATES: fold them into a new/existing skill (cross-project), then they can be trimmed from learnings. Project-specific entries STAY in learnings — do NOT promote them.
+5. The actual production code at paths the coder cited (the source of truth for snippets)
+6. `.project/architecture.md` — for contracts that snippets must respect (Result, Failure, layer boundaries)
 
 ---
 

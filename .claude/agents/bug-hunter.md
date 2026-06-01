@@ -216,6 +216,8 @@ For audit transparency — which scenarios from §4 were applied to which flow:
 - **Focus for next:** {bullets}
 ```
 
+**Append a project learning (CLAUDE.md §7.1):** when a BLOCKER/MAJOR bug stems from a non-obvious, project-specific trap (a Riverpod lifecycle quirk, a contract mismatch, a platform gotcha) that a future phase could repeat, add a short `L-NN` entry to `.project/learnings.md` with a `Trigger:` keyword line so `coder` reads it before the next phase. This is how the same bug stops recurring across a long auto run. (You write the learning; you do NOT write the fix — that bounces to coder.)
+
 ---
 
 ## 6. Severity Definitions

@@ -37,8 +37,9 @@ Read in strict order. Do NOT skip:
 4. `.project/api/openapi.yaml` if it exists — for endpoint signatures, schemas, error contracts
 5. The active phase file `.project/phases/phase-XX-{slug}.md` — your work assignment
 6. **`.claude/skills/INDEX.md`** — MANDATORY, see §6 for the algorithm
+7. **`.project/learnings.md`** — MANDATORY (CLAUDE.md §7.1): this project's running memory. Scan for entries whose `Trigger:` keywords match your tasks BEFORE writing code, so you don't re-hit a pitfall a prior phase already solved.
 
-If any of files 1–5 is missing → halt with a clear message.
+If any of files 1–5 is missing → halt with a clear message. (`learnings.md` may be empty on phase 01 — that's fine; you still append to it.)
 
 ---
 
@@ -52,9 +53,15 @@ Read the active phase file. Identify all tasks where `owner: coder`. Filter to t
 
 If multiple tasks marked `[P]` (parallelizable), you MAY work on them in any order. If `[P]` tasks touch independent files, batch their writes; otherwise serialize.
 
-### Stage 2: Skill Discovery (mandatory, per §6)
+### Stage 2: Skill Discovery + Search-Before-Building (mandatory, per §6)
 
 For each task, run the skill discovery algorithm. Decide: **verbatim / adapt / skip**.
+
+**Search before building (BINDING — don't reinvent what already exists):** before writing NEW code for a task, search the existing codebase for a reusable pattern, util, widget, provider, or model that already does (most of) it:
+- `Grep`/`Glob` `lib/` for the concept (e.g. a formatter, a base repository, an error mapper, a design-system component) — extend/reuse it instead of writing a parallel one.
+- Check `.project/learnings.md` `Trigger:` keywords for a project-specific approach already chosen.
+- Honor the design-system + arch contracts: reuse existing tokens/components/layers rather than introducing a competing one.
+If you do build new where something similar exists, say why in the handoff (the alternative was unsuitable) — an unjustified duplicate is a code-reviewer finding (CLAUDE.md §14.2/§14.3).
 
 ### Stage 3: Implement
 
@@ -73,6 +80,7 @@ Run the verification checklist. Block if any step fails.
 For each task that passed verification:
 - Mark checkbox `[x]`
 - If you discovered a reusable pattern, append to the phase file's `skills_to_extract:` frontmatter array
+- **Append project learnings (CLAUDE.md §7.1):** if this task surfaced a non-obvious, reusable-within-this-project lesson — a pattern that worked, a pitfall, a >1-try decision, a package/API quirk — add a short `L-NN` entry (2–5 lines, with a `Trigger:` keyword line) to the right section of `.project/learnings.md`. If you hit a lesson that was ALREADY in learnings, bump its `[recurrence: N]`. Don't log the obvious; keep it terse.
 
 Append a single block to `## Handoff Notes`:
 

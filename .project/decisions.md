@@ -373,4 +373,25 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-014 — gstack-esinli iyileştirmeler: in-project learnings + search-before-building + STRIDE; EXAMPLE temizliği
+
+**Tarih:** 2026-06-01
+**Karar veren:** user (garrytan/gstack incelemesi sonrası: "eksikleri tespit et, profesyonelleştir, gereksizleri temizle")
+
+**Bağlam:** [garrytan/gstack](https://github.com/garrytan/gstack) (yatay AI software-factory, 23 agent + 50+ skill) incelendi ve dikey Flutter pipeline'ımızla karşılaştırıldı. Bizim INTEGRATION_SMOKE proof-of-work runtime gate'imiz gstack'te yok (orada güçlüyüz). gstack'te olup bizde eksik 5 olgun kavram tespit edildi; kullanıcı 3'ünü seçti. gstack'in yatay-factory özellikleri (browser otomasyonu, GBrain semantic memory, parallel sprints/Conductor, taste-memory) BİLEREK alınmadı — dikey template'e bloat katar.
+
+**Uygulananlar:**
+- **#1 In-project learnings (en yüksek değer):** `.project/learnings.md` (akan proje-içi hafıza) + `.project/known-issues.md` (CLAUDE.md vaat ediyordu, disk boştu — oluşturuldu) eklendi. `coder` her faz kod yazmadan ÖNCE learnings'i okur (CLAUDE.md §7.1 + §11 reading order); coder/bug-hunter/test-writer/db-migration öğrendiğini `L-NN` entry olarak yazar; `[recurrence: ≥2]` flag'li olanları skill-extractor cross-project skill'e terfi eder. Bu, kullanıcının "auto-modda günlerce koşup aynı bug'ı tekrar yapıyor" derdine doğrudan çözüm — pipeline artık faz-arası öğrendiğini unutmaz. Bilgi katmanları net ayrıldı: learnings (proje-içi) ≠ skills (cross-project) ≠ decisions (ADR) ≠ known-issues (WONTFIX).
+- **#2 Search-before-building:** coder Stage 2'ye bağlayıcı kural — yeni kod yazmadan önce mevcut `lib/`'i grep'le (reusable util/widget/provider/pattern var mı), design-system/arch contract'larını yeniden kullan; gerekçesiz duplicate = code-reviewer finding (§14.2/§14.3).
+- **#4 STRIDE threat model:** security-reviewer'a L2/L2+R'de yeni trust-boundary (auth/endpoint/RPC/payment/deeplink/native-bridge/PII) için hafif STRIDE pass (Stage 1.5) — MASVS kontrol-listesinin üstüne saldırı-modeli. L1'de SKIP. Verdict çıktısında raporlanır. Compliance lane'ine girmez (teknik threat-modeling).
+
+**Temizlenenler:**
+- `.project/qa-runs/EXAMPLE-test-0{1,2,3}-findings.md` (3 dosya, ~25KB sahte QA logu) SİLİNDİ — hiçbir doküman referans vermiyordu, yetim; template clone'unda yeni kullanıcının `qa-runs/`'ına sahte bulgu dosyaları kopyalanıyordu (cruft). `.gitkeep` klasörü koruyor.
+- Working-tree `.DS_Store` + `.claude/hooks/__pycache__/` (gitignore'lu, yerel) kaldırıldı.
+- `flutter-build-boot-gate/checklist.md` `run_smoke.sh` canonical gate'e + manuel-CI gerçekliğine hizalandı (eskiden legacy `smoke_boot.sh`'ı gate sanıyordu — ADR-011/013 sonrası stale kalmıştı).
+
+**ALINMAYANLAR (bilinçli):** gstack'in cross-model review (`/codex`), GBrain semantic memory, browser otomasyonu, parallel sprints, taste-memory — dikey Flutter template'ine değer/karmaşıklık oranı düşük; istenirse sonra eklenebilir.
+
+---
+
 (Future ADRs added here.)

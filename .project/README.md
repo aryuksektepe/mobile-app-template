@@ -15,6 +15,7 @@ This directory contains the source-of-truth documents that every agent reads. Fi
 | `perf-checklist.md` | performance-reviewer | Rolling NFR budget tracking per phase |
 | `compliance-checklist.md` | compliance | Rolling KVKK/GDPR/ATT/Play DS per phase |
 | `decisions.md` | (manual) ADR log for project-wide decisions outside architecture.md |
+| `learnings.md` | coder / bug-hunter / test-writer / db-migration | In-project running memory; coder reads FIRST each phase (CLAUDE.md §7.1) |
 | `known-issues.md` | bug-report-handler | WONTFIX entries (user-acknowledged) |
 | `handoffs.md` | orchestrator | Append-only JSONL log of every agent dispatch |
 | `legal/sdk-inventory.md` | compliance / security-reviewer | Third-party SDK list with privacy justification |

@@ -158,6 +158,7 @@ mobile-app-development-templates/
 │   ├── perf-checklist.md       # rolling (performance-reviewer)
 │   ├── compliance-checklist.md # rolling (compliance)
 │   ├── decisions.md         # project-wide ADR log
+│   ├── learnings.md         # in-project running memory — coder reads FIRST each phase (§7.1)
 │   ├── known-issues.md      # WONTFIX entries, accepted risks
 │   ├── handoffs.md          # JSONL append-only inter-agent log
 │   ├── phases/
@@ -292,6 +293,15 @@ After `USER_APPROVAL`, the `skill-extractor` agent inspects what was built and d
 
 If yes to any → create skill, update `INDEX.md`. If no → log decision in phase file.
 
+### 7.1. Project learnings — in-project memory (BINDING)
+
+The skill system captures **cross-project** knowledge. `.project/learnings.md` captures **this project's** running memory — the cheap, fast-moving counterpart that stops a long auto-mode run from re-learning the same project-specific pitfall every few phases (the dominant "it ran for days and kept hitting the same bug" failure).
+
+- **Read (BINDING):** `coder` reads `.project/learnings.md` before writing code each phase (alongside INDEX.md). `bug-hunter`, `test-writer`, `db-migration` read it when relevant.
+- **Write:** whenever an agent hits a non-obvious, reusable-within-this-project lesson (a pattern that worked, a pitfall, a >1-try decision, a package/API quirk), it appends a short `L-NN` entry (2–5 lines) to the right section. Don't log the obvious.
+- **Recurrence → skill:** if a learning recurs across ≥2 phases, flag it `[recurrence: N]`. `skill-extractor` reads `learnings.md` at the end of a phase and promotes recurring/generalizable entries to a real `.claude/skills/` skill; project-specific ones stay in `learnings.md`.
+- **Don't duplicate:** `learnings.md` = project-specific notes · `skills/` = cross-project reusable · `decisions.md` = architectural/process ADRs · `known-issues.md` = accepted/WONTFIX. A lesson lives in exactly one place.
+
 ---
 
 ## 8. Critical Approval Gates (User Says Yes Required)
@@ -421,8 +431,9 @@ When any agent starts, it MUST read in this order:
 2. `.project/architecture.md` — this is now a **lean INDEX** (TOC + stack summary + ADR log), NOT the full spec. Do NOT read the whole `arch/` tree.
 3. **Only the `arch/` slice(s) your role owns** (table below). Load another slice **on demand** if a task genuinely needs it — never read all slices "to be safe". **If `architecture.md` / the `arch/` tree do not exist yet** (pre-architecture phases — `architect` generates them post-approval), skip steps 2–3; they are not dead paths, just not produced yet.
 4. The current phase file — the **LIVE** `phase-XX-{slug}.md` only. Open `phase-XX-{slug}-archive.md` ONLY when you must verify/append evidence (see §6 read/write rule).
-5. Any agent-specific files referenced in its own definition
-6. `.claude/skills/INDEX.md` (coder reads FIRST per §7; others may reference)
+5. **`.project/learnings.md`** — the project's running memory (in-project, fast-moving). `coder` MUST read this BEFORE writing code each phase (right after / together with INDEX.md per §7) so the pipeline stops re-learning the same project-specific pitfall across a long auto run. Other builder/reviewer agents read it when relevant. (See §7.1.)
+6. Any agent-specific files referenced in its own definition
+7. `.claude/skills/INDEX.md` (coder reads FIRST per §7; others may reference)
 
 ### Architecture slice ownership (single source of truth)
 
