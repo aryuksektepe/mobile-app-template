@@ -70,7 +70,10 @@ jobs:
       - name: Upload smoke artifact
         if: always()
         uses: actions/upload-artifact@v4
-        with: { name: smoke-android, path: .project/qa-runs/smoke-*.log, if-no-files-found: ignore }
+        with:
+          name: smoke-android
+          path: .project/qa-runs/smoke-*.log
+          if-no-files-found: ignore
 
   build-ios:
     name: Build (iOS, no codesign)
@@ -156,4 +159,7 @@ jobs:
       - name: Upload smoke artifact
         if: always()
         uses: actions/upload-artifact@v4
-        with: { name: smoke-${{ matrix.platform }}, path: .project/qa-runs/smoke-*.log, if-no-files-found: ignore }
+        with:
+          name: smoke-${{ matrix.platform }}
+          path: .project/qa-runs/smoke-*.log
+          if-no-files-found: ignore
