@@ -4,12 +4,18 @@
 # SUFFICIENT: they structurally cannot see compile-time, app-boot, or
 # real-backend defects, nor Riverpod/stream lifecycle storms. The runtime jobs
 # (`build-and-boot`, `build-ios`, `backend-integration`, `integration-smoke`)
-# are what make the `INTEGRATION_SMOKE` gate enforceable (CLAUDE.md §3, §9).
-# No phase may leave INTEGRATION_SMOKE with these jobs red.
+# mirror the `INTEGRATION_SMOKE` gate (CLAUDE.md §3, §9).
 #
-# CI economy (CLAUDE.md §9): run the full local gate, then push in BATCHES —
-# CI confirms once per batch, it is not a per-commit cross-check. Per-commit
-# pushes burn the Actions minute budget fast.
+# TRIGGER = MANUAL ONLY (workflow_dispatch). This template's design enforces the
+# runtime gate LOCALLY every phase: the agent runs `tool/run_smoke.sh` on the
+# local emulator and the `verify-smoke.py` hook blocks the gate on fake/missing
+# evidence (ADR-011) — no GitHub minutes needed. The pipeline also STOPS at the
+# QA_SMOKE_TEST gate and asks YOU to test on a device (qa-test-guide). So GitHub
+# CI here would just re-run, on paid minutes, what already ran locally. It is
+# kept available as an OPTIONAL on-demand batch confirmation: run it by hand from
+# the Actions tab ("Run workflow") when you want a clean cloud check before a
+# release. To restore auto-on-push, add `push:`/`pull_request:` back under `on:`.
+# (ADR-013.)
 #
 # app-bootstrap regenerates a per-project copy during Phase 01 (its §5.D) —
 # that copy MUST keep these jobs. Drop build-ios only for an Android-only
@@ -18,9 +24,7 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:   # manual only — click "Run workflow" in the Actions tab
 
 jobs:
   # Guard: this is a TEMPLATE repo — until a real project is bootstrapped

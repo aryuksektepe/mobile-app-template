@@ -358,4 +358,19 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-013 — GitHub CI manuel-only (workflow_dispatch); runtime gate lokalde zorlanır
+
+**Tarih:** 2026-06-01
+**Karar veren:** user ("testleri ben yaparım, pipeline test noktasına gelince beni uyarsın; GitHub dakikası harcamasın")
+
+**Bağlam:** Kullanıcı GitHub'a push'u "dosya yedeği" olarak görüyor (doğru — bu Git, bedava). GitHub CI ise ayrı: bulut bilgisayarında derleyip test eden, **dakika harcayan** bir robot. Template'in tasarımı runtime doğrulamayı zaten İKİ yerde lokal/ücretsiz yapıyor: (1) her faz `tool/run_smoke.sh` lokal emülatörde çalışır + `verify-smoke.py` hook'u sahte/eksik kanıtı bloklar (ADR-011); (2) `QA_SMOKE_TEST` gate'inde pipeline DURUR ve kullanıcıya cihazda test senaryoları verir (qa-test-guide). Dolayısıyla GitHub CI, lokalde zaten koşan şeyi ücretli dakikayla tekrarlıyordu.
+
+**Karar:** `ci.yml` tetikleyicisi `push:`/`pull_request:` → **`workflow_dispatch` (yalnızca elle)**. Artık hiçbir push CI çalıştırmaz, dakika yanmaz, fail maili gelmez. CI, Actions sekmesinden "Run workflow" ile **isteğe bağlı** çalıştırılabilir (ör. release öncesi temiz bulut teyidi). Bir proje her fazda bulut-CI gate'i isterse `push:`/`pull_request:` tetikleyicilerini geri ekleyip dakikayı bütçeler.
+
+**Tutarlılık:** CLAUDE.md §9'daki "CI runtime jobs MUST be green before a phase leaves INTEGRATION_SMOKE" satırı düzeltildi: gate'in BAĞLAYICI kanıtı artık açıkça **lokal smoke artefaktı** (`.project/qa-runs/smoke-*.log` + verify-smoke.py hook, dakika gerektirmez); GitHub CI aynı `run_smoke.sh`'ı bulutta koşar ama opsiyonel/manuel batch teyididir, per-faz şart değil. ADR-011'in lokal proof-of-work mekanizması bu kararla zayıflamaz — aksine asıl zorlayıcı odur. ADR-012'nin guard job'ı yerinde kalır (manuel çalıştırmada boş-template'i hâlâ skip eder).
+
+**Etki:** Kullanıcının istediği akış: geliştir → push (bedava yedek) → pipeline test noktasında (QA_SMOKE_TEST) durup uyarır → kullanıcı cihazda test eder → devam. GitHub dakikası sadece kullanıcı bilerek "Run workflow" derse harcanır.
+
+---
+
 (Future ADRs added here.)
