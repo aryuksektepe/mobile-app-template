@@ -421,6 +421,7 @@ Every agent must enforce these baselines. Violations block progression.
 | `/start-phase <id>` | Begins a specific phase |
 | `/report-bug` | Triages a user-reported bug |
 | `/extract-skill` | Manually run skill-extractor on a finished phase |
+| `/skill-freshness` | Audits all skill `package_versions` pins against pub.dev; flags STALE/major-drift/conflict (run monthly — ADR-016) |
 | `/ship` | Triggers release-manager |
 | `/status` | Prints phase index + current state summary |
 

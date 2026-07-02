@@ -144,6 +144,7 @@ Her agent state'i okur, çalışır, frontmatter'ı günceller, orchestrator sı
 | `/start-phase {id}` | Belirli bir fazı başlat |
 | `/report-bug` | Dış bug raporunu triage et |
 | `/extract-skill {phase-id?}` | Manuel skill extraction |
+| `/skill-freshness` | Skill pinlerini pub.dev'e karşı denetle (aylık önerilir) |
 | `/ship` | Release pipeline |
 | `/status` | Proje durumu özeti |
 
@@ -151,13 +152,15 @@ Her agent state'i okur, çalışır, frontmatter'ı günceller, orchestrator sı
 
 | Agent grubu | Model | Gerekçe |
 |---|---|---|
-| Orchestrator | opus | Routing + gate enforcement |
+| Orchestrator | sonnet | En sık çağrılan agent; routing mekanik — gate zorlaması hook'larda (gerekirse opus'a pinlenebilir, bkz. orchestrator.md) |
 | Architect, Product Analyst, Task Planner, API Design | opus | Mimari hatalar her yere yayılır |
 | Coder | sonnet | Workhorse default |
-| Reviewers (Code, Security, Performance, Bug Hunt, Compliance) | opus | Verification bottleneck |
-| Test Writer, QA Test Guide, Localization, DB Migration, Crash Monitor | sonnet | Disiplinli + yaratıcı |
+| Reviewers (Code, Security, Performance, Bug Hunt) | opus | Verification bottleneck |
+| Compliance | sonnet | Kural-listesi yürütme (jurisdiksiyon kontrol listeleri), yaratıcı muhakeme değil |
+| Test Writer, QA Test Guide, DB Migration, Crash Monitor | sonnet | Disiplinli + yaratıcı |
 | App Bootstrap, UX Designer | sonnet | Yapı + yaratıcı karışım |
-| Feature Chronicler, ASO, Bug Report Handler | sonnet | Yazım + triage |
+| ASO, Bug Report Handler | sonnet | Yazım + triage |
+| Feature Chronicler, Localization | haiku | Düşük-muhakeme metin dönüşümü (changelog dili, ARB anahtarları) |
 | Skill Extractor | opus | Yanlış extract pahalı (kalıcı) |
 | Release Manager | opus | Production'a son kapı |
 

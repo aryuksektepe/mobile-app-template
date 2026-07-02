@@ -414,4 +414,21 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-016 — Skill freshness disiplini + model-tablosu senkronu (Dalga 1+4)
+
+**Tarih:** 2026-07-02
+**Karar veren:** user (2026 evrim planının kalan dalgaları — "devam et")
+
+**Bağlam (ölçülmüş):** pub.dev API'ye karşı gerçek kontrol yapıldı: pinlerin çoğu uyumlu (`flutter_secure_storage ^10.1`→10.3.1 ✓, `firebase_messaging ^16.2`→16.4.1 ✓, `go_router` 17.x ✓) AMA `account-deletion-cross-cutting` `purchases_flutter ^9.0.0` pinliyordu — hem **majör-bayat** (latest 10.4.0) hem de bağımlı olduğu `subs-revenuecat`'in `^10.0.2` piniyle **çakışıyordu** (flutter_secure_storage'da ADR-010'da düzeltilen sınıfın aynısı, ikinci kez). Ayrıca Riverpod 3.x yayında (skill'ler 2.x-odaklı — 2x-guard skill'i isim-gereği versiyon-scope'lu, sorun değil). README model tablosu 4 satırda gerçek agent dosyalarından kopuktu (orchestrator opus↔sonnet, compliance opus↔sonnet, localization + feature-chronicler sonnet↔haiku).
+
+**Kararlar:**
+1. **Freshness rule (BINDING, INDEX.md + coder Iron-Rule eki):** `last_verified` >90 gün olan skill STALE'dir — coder pin/versiyon-hassas snippet'i körlemesine yapıştıramaz; pub.dev API'den doğrular; majör drift'te CHANGELOG okur, uyarlar, pitfalls.md'ye delta ekler, `last_verified` bump'lar.
+2. **`/skill-freshness` komutu (yeni):** kütüphane-geneli aylık audit — tüm `package_versions` pinlerini pub.dev'e karşı sınıflandırır (OK / MINOR-DRIFT / MAJOR-DRIFT / CONFLICT), çakışmaları canonical skill'e hizalar, majör-drift'i STALE işaretler ama **pini körlemesine bump'lamaz** (snippet API uyumu ayrı bilinçli iş). Cron değil manuel komut — template'te zamanlanmış ağ erişimi varsayımı yapılmadı.
+3. **`purchases_flutter` çakışması düzeltildi:** account-deletion `^9.0.0`→`^10.0.2` (canonical: subs-revenuecat; deletion yüzeyi 9→10'da stabil; cihaz re-verify pending — ADR-010'daki secure-storage pattern'inin aynısı).
+4. **README model tablosu gerçekle senkronlandı** (orchestrator sonnet + gerekçe; compliance sonnet; feature-chronicler + localization haiku satırı eklendi). Model isimleri `opus/sonnet/haiku` alias olarak KALDI — alias'lar ileri-uyumlu (Claude 5 ailesine otomatik çözülür), spesifik model ID pinlemek template'i eskitir.
+
+**Dalga 3 (Workflow scriptleri + worktree izolasyonu) UYGULANMADI — izlemede:** paralel yazan coder görevi yokken izolasyon bürokrasi olur; Workflow'lar research preview. ADR-015 watch-list kaydı geçerli. Pipeline paralelliği şimdilik ADR-015 penceresi (read-only review'lar) ile sınırlı — doğru sınır bu.
+
+---
+
 (Future ADRs added here.)

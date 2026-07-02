@@ -9,6 +9,8 @@
 > **Validation status legend:**
 > - `pre-seeded` — written from research, NOT yet validated in a real project. Treat as ADAPT not VERBATIM. Append findings to skill's pitfalls.md after first use.
 > - `battle-tested` — verified across ≥2 successful real-project uses with no surprises. Use VERBATIM.
+>
+> **Freshness rule (BINDING — ADR-016):** a skill whose `last_verified` is **>90 days old** is STALE regardless of validation status: before pasting any `package_versions` pin or version-sensitive snippet from it, `coder` MUST verify the pin against pub.dev (`https://pub.dev/api/packages/<name>` → `latest.version`; WebFetch or curl). Same-major drift → use the skill, note the newer version. **Major-version drift → do NOT paste blind**: check the package CHANGELOG for breaking changes, adapt, and append what changed to the skill's pitfalls.md + bump `last_verified`. Run `/skill-freshness` for a library-wide audit (aylık önerilir). Rasyonel: pinler yazıldığı gün doğrudur, SDK'lar yürür — 2026-07 auditinde `purchases_flutter` 9→10 majör drifti + skill-arası pin çakışması tam böyle yakalandı.
 
 ---
 

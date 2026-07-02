@@ -9,7 +9,7 @@ ios_min: "13.0"
 android_min_sdk: 24
 package_versions:
   firebase_auth: "^6.0.0"
-  purchases_flutter: "^9.0.0"
+  purchases_flutter: "^10.0.2"  # aligned with subs-revenuecat (canonical) — was ^9.0.0, majör-bayat + depends_on çakışması; deletion yüzeyi (logOut/REST) 9→10'da stabil, cihaz re-verify pending
   firebase_messaging: "^16.0.0"
   flutter_secure_storage: "^10.1.0"
 extracted_from_phase: pre-seeded

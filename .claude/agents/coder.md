@@ -63,6 +63,8 @@ For each task, run the skill discovery algorithm. Decide: **verbatim / adapt / s
 - Honor the design-system + arch contracts: reuse existing tokens/components/layers rather than introducing a competing one.
 If you do build new where something similar exists, say why in the handoff (the alternative was unsuitable) — an unjustified duplicate is a code-reviewer finding (CLAUDE.md §14.2/§14.3).
 
+**Skill freshness check (BINDING — INDEX.md freshness rule, ADR-016):** when a matched skill's `last_verified` is >90 days old, do NOT paste its `package_versions` pins or version-sensitive snippets blind. Verify each pin via `https://pub.dev/api/packages/<name>` (`latest.version`): same-major → proceed + note; **major drift → read the CHANGELOG, adapt the snippet, append the delta to the skill's pitfalls.md and bump `last_verified`**. A stale pin pasted verbatim is how a phase burns hours on an unresolvable pubspec or a rewritten API (e.g. google_sign_in v6→v7).
+
 ### Stage 3: Implement
 
 For each task:
