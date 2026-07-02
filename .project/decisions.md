@@ -394,4 +394,24 @@ NOT adopted (Simplicity First): no separate `-goBranch` skill (would split disco
 
 ---
 
+## ADR-015 — Paralel review penceresi: security + performance eşzamanlı koşar (state machine değişmeden)
+
+**Tarih:** 2026-07-02
+**Karar veren:** user (2026 evrim analizi sonrası "Dalga 2: Paralel review'lar" seçildi)
+
+**Bağlam:** 2026 platform araştırması: Claude Code artık native paralel orkestrasyon sunuyor (Dynamic Workflows, Agent Teams); bizim pipeline ise faz başına 12+ agent adımını tamamen SERİ koşuyordu. `security-reviewer` + `performance-reviewer` birbirinden bağımsız ve production-code'da read-only — seri koşmaları saf duvar-saati israfı. (SDD + proof-of-work çekirdeği güncel çıktı; yaşlanan şey yürütme şekliydi.)
+
+**Karar — yürütme paralel, state'ler checkpoint:** Yeni state İCAT EDİLMEDİ (4 kaynak + 36 hook testine cerrahi gerektirirdi; §14.2 simplicity). Bunun yerine:
+- CODE_REVIEW/BUG_HUNT geçince orchestrator **iki reviewer'ı TEK mesajda paralel dispatch eder** (iki Task çağrısı).
+- `SECURITY_REVIEW` → `PERFORMANCE_REVIEW` state'leri, paralel yürütme bittikten sonra sırayla hızla geçilen **verdict checkpoint'leri** olur (perf verdict'i security checkpoint'ine gelindiğinde normalde çoktan diskte).
+- Security BLOCK → coder'a döner (perf geçse bile); fix sonrası **İKİSİ birden** yeniden paralel koşar (kod değişti → iki verdict de bayat).
+- Her reviewer YALNIZCA kendi verdict bloğunu + kendi rolling checklist'ini yazar; phase dosyasında Edit çakışırsa re-read + retry (Iron Rule olarak iki agent'a da eklendi).
+- **`compliance` pencereye ALINMADI** — ADR-003 gereği bilerek INTEGRATION_SMOKE sonrasında kalır (doğrulanmış-çalışan uygulamayı denetler). İlk plan taslağındaki "üçü paralel" ifadesi bu gerekçeyle düzeltildi.
+
+**Etki:** İki opus-tier review artık eşzamanlı → faz duvar-saati kısalır (auto-mode'da birikimli kazanç büyük). Hook'lara (validate-phase-state.py, verify-smoke.py) sıfır dokunuş — 16 state, STATUS_TO_OWNER, 67 test aynen geçerli. Değişen dosyalar: orchestrator.md (dispatch tablosu + "parallel review window" bölümü), security-reviewer.md + performance-reviewer.md (eşzamanlılık Iron Rule), CLAUDE.md §3 (pencere notu).
+
+**Almadıklarımız (bilinçli, izlemede):** Agent Teams'e geçiş (deneysel; hub-and-spoke + hook zorlaması daha denetlenebilir), state machine'in Workflow scriptlerine taşınması (research preview; mevcut hook'lu sistem daha deterministik).
+
+---
+
 (Future ADRs added here.)

@@ -73,17 +73,26 @@ DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
 | `BOOTSTRAPPING` | `coder` | `pubspec.yaml` exists; `lib/main.dart` exists; base folder layout matches `arch/01-foundation.md` (load that slice on demand for this check) |
 | `IN_PROGRESS` | `test-writer` | All `## Tasks` checkboxes ticked OR `## Handoff Notes` from coder explains why some are deferred |
 | `TESTS_WRITTEN` | `code-reviewer` | At least one new test file under `test/` referenced in handoff notes |
-| `CODE_REVIEW` (risk_score = `low` or `medium`) | `security-reviewer` | `risk_score` field set in frontmatter; reviewer wrote a `## Code Review` block |
+| `CODE_REVIEW` (risk_score = `low` or `medium`) | Set status `SECURITY_REVIEW`, then dispatch `security-reviewer` **AND** `performance-reviewer` **IN PARALLEL** — both Task calls in a SINGLE message (ADR-015). They are independent + read-only on production code; running them serially wastes wall-clock. | `risk_score` field set in frontmatter; reviewer wrote a `## Code Review` block |
 | `CODE_REVIEW` (risk_score = `high`) | `bug-hunter` | Same as above, plus reviewer listed concrete concerns |
-| `BUG_HUNT` | If bugs found → set status back to `IN_PROGRESS`, dispatch `coder`. If clean → `security-reviewer` | Bug-hunter wrote `## Bug Hunt` block with verdict |
-| `SECURITY_REVIEW` | `performance-reviewer` | `security-reviewer` updated `.project/security-checklist.md` with this phase's row |
-| `PERFORMANCE_REVIEW` | Transition to `INTEGRATION_SMOKE`. Dispatch `coder` (phase ≥ 02) / `app-bootstrap` (phase 01) to RUN `bash tool/run_smoke.sh <phase_id>` and reference the produced log in `## Integration Smoke`; status stays `INTEGRATION_SMOKE`. (Never accept a hand-written evidence block — it must be a captured artifact.) | Performance reviewer wrote a `## Performance Review` block with metrics |
+| `BUG_HUNT` | If bugs found → set status back to `IN_PROGRESS`, dispatch `coder`. If clean → same parallel dispatch as the low/medium row above (`security-reviewer` + `performance-reviewer` in ONE message) | Bug-hunter wrote `## Bug Hunt` block with verdict |
+| `SECURITY_REVIEW` | **Checkpoint, not a dispatch** (both reviewers already ran in parallel): read `## Security Review`. BLOCK → status `IN_PROGRESS`, dispatch `coder`. PASS/PASS-WITH-NOTES → set status `PERFORMANCE_REVIEW` and fall through to the next row immediately (its block is usually already written). If the block is missing (parallel run died), re-dispatch `security-reviewer` alone. | `security-reviewer` updated `.project/security-checklist.md` with this phase's row |
+| `PERFORMANCE_REVIEW` | **Checkpoint** (block normally already written by the parallel run): read `## Performance Review`. FAIL/BLOCK → status `IN_PROGRESS`, dispatch `coder`. Missing → re-dispatch `performance-reviewer` alone. PASS → transition to `INTEGRATION_SMOKE` and dispatch `coder` (phase ≥ 02) / `app-bootstrap` (phase 01) to RUN `bash tool/run_smoke.sh <phase_id>` and reference the produced log in `## Integration Smoke`; status stays `INTEGRATION_SMOKE`. (Never accept a hand-written evidence block — it must be a captured artifact.) | Performance reviewer wrote a `## Performance Review` block with metrics |
 | `INTEGRATION_SMOKE` | If `## Integration Smoke` references a valid smoke artifact (see gate below) and you `Read` it confirming `SMOKE_RESULT exit=0` at the current SHA → `compliance`. If absent/partial/failed → route back to `coder`/`app-bootstrap` to re-run `run_smoke.sh`; status stays `INTEGRATION_SMOKE`. In auto mode, 2 consecutive failures on this phase → HALT + ask user. | `## Integration Smoke` references `.project/qa-runs/smoke-<phase>-<sha>-<ts>.log` (sha == HEAD) containing `BOOT_OK …sha=…` + `FIRST_SCREEN_OK` + `SMOKE_RESULT exit=0`; plus per-FR non-mocked e2e (HTTP+DB) + every new Edge fn/RPC/migration with a 2xx call + every new screen's executed tap-path. The `verify-smoke.py` hook also enforces this. |
 | `COMPLIANCE_CHECK` | If user-facing strings changed → `localization` first, then `qa-test-guide`. Else `qa-test-guide` directly | Compliance reviewer wrote a `## Compliance Check` block |
 | `QA_SMOKE_TEST` | **STOP — ask user** | qa-test-guide produced `## Smoke Test Log` with numbered scenarios |
 | `USER_APPROVAL` | **STOP — wait for user** (do not dispatch) | n/a |
 | `CHRONICLED` | `skill-extractor` | `feature-chronicler` updated `.project/features.md` |
 | `SKILL_EXTRACTED` | None — set `status: DONE`, update `phases/INDEX.md`, dispatch nothing, return | `skill-extractor` either created a new skill (and updated `.claude/skills/INDEX.md`) or wrote a `## Skill Extraction Decision` block explaining why none was created |
+
+### The parallel review window (ADR-015)
+
+`security-reviewer` + `performance-reviewer` are independent, read-only-on-production reviews — you dispatch them **concurrently in one message** (two Task calls) when CODE_REVIEW/BUG_HUNT passes. The state machine is UNCHANGED: `SECURITY_REVIEW` and `PERFORMANCE_REVIEW` remain as sequential **verdict checkpoints** you walk through after the parallel execution completes (security's verdict is checked first; perf's block is normally already on disk when you reach its row). Rules:
+
+- Both write ONLY their own verdict block + their own rolling checklist — never each other's.
+- A security BLOCK bounces to `coder` even if perf passed; after the fix, re-dispatch BOTH in parallel again (code changed → both verdicts are stale).
+- `compliance` is NOT part of this window — it deliberately runs AFTER `INTEGRATION_SMOKE` so it audits a verified-running app (ADR-003). Do not "optimize" it into the parallel window.
+- Frontmatter `owner_agent` follows the CURRENT status checkpoint (security-reviewer while `SECURITY_REVIEW`), regardless of which reviewer is still running.
 
 ### The INTEGRATION_SMOKE gate (never skippable)
 

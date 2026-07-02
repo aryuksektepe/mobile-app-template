@@ -76,6 +76,8 @@ DRAFT → PLANNED → BOOTSTRAPPING → IN_PROGRESS → TESTS_WRITTEN
 | `CHRONICLED` | `SKILL_EXTRACTED` | feature-chronicler updated features.md | NO |
 | `SKILL_EXTRACTED` | `DONE` | skill-extractor decided + acted | NO |
 
+**Parallel review window (ADR-015):** `SECURITY_REVIEW` and `PERFORMANCE_REVIEW` are **verdict checkpoints**, not serial executions. When CODE_REVIEW/BUG_HUNT passes, the orchestrator dispatches `security-reviewer` AND `performance-reviewer` **concurrently in one message** (both are independent + read-only on production code), then walks the two checkpoint states in order as their verdicts land. A security BLOCK bounces to coder even if perf passed; after a fix BOTH re-run (code changed → both verdicts stale). `compliance` stays OUTSIDE this window — it runs after `INTEGRATION_SMOKE` by design (ADR-003: it audits a verified-running app).
+
 ### INTEGRATION_SMOKE — the runtime gate (NEVER skippable)
 
 **INTEGRATION_SMOKE** runs *before* `COMPLIANCE_CHECK` so that compliance and QA operate on an app that has actually been built, booted, and exercised against a real backend — not on a declared one. Evidence is recorded in the phase file's `## Integration Smoke` section; the orchestrator will not transition out of this state without it. This gate is NEVER skippable — not conditionally, not via `## Skipped Steps`, not in autonomous mode (`auto_approve: true` bypasses human-approval gates, NOT runtime verification), not for "trivial" phases.
