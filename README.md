@@ -3,6 +3,11 @@
 > Production-grade Flutter (iOS + Android) mobil uygulama geliştirme template'i.
 > 23 specialized AI subagent + state-machine pipeline + skill-based knowledge accumulation.
 
+> **Bu repo bir kurs materyalidir.** *Claude Code ile Yazılım Geliştirme* kursunun
+> **Bölüm 11**'inde (Capstone 2 — Flutter üretim pipeline'ı) ekranda incelenen sistem budur.
+> Kursu izlemiyorsanız da kullanabilirsiniz; template kendi başına çalışır. Kurstaysanız
+> bölüm boyunca burayı açık tutmanız yeterli, klonlamak zorunda değilsiniz.
+
 ---
 
 ## Ne işe yarar?
